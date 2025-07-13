@@ -1,0 +1,36 @@
+volumes:
+  music_streaming:
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  postgres:
+    container_name: music_streaming_postgres
+    image: 'postgres:latest'
+    restart: always
+    environment:
+      POSTGRES_DB: music_streaming
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_USER: myuser
+    volumes:
+      - music_streaming:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  music-streaming-server:
+    build:
+      context: ./server
+      dockerfile: ./server.dockerfile
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - "8080:8080"
+    deploy:
+      mode: replicated
+      replicas: 1
