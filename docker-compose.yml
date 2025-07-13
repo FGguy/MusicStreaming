@@ -23,8 +23,8 @@ services:
 
   music-streaming-server:
     build:
-      context: ./server
-      dockerfile: ./server.dockerfile
+      context: ./backend
+      dockerfile: ./backend.dockerfile
     restart: always
     depends_on:
       - redis
