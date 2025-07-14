@@ -35,7 +35,9 @@ func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) 
 
 const insertUser = `-- name: InsertUser :one
 INSERT INTO Users (name, password)
-VALUES ($1, $2) RETURNING name, password
+VALUES ($1, $2) 
+ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+RETURNING name, password
 `
 
 type InsertUserParams struct {

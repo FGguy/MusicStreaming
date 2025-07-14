@@ -1,6 +1,8 @@
 -- name: InsertUser :one
 INSERT INTO Users (name, password)
-VALUES ($1, $2) ON CONLICT (name) DO NOTHING RETURNING *;
+VALUES ($1, $2) 
+ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+RETURNING *;
 
 -- name: DeleteUser :one
 DELETE FROM Users 
