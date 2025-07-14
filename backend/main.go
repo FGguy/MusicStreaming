@@ -18,5 +18,9 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	//TODO: load config file
+	//TODO: Create tables if they dont exist
+	//TODO: Create admin user if he doesnt exist
+
 	server.NewServer().Run(fmt.Sprintf(":%d", PORT))
 }

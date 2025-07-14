@@ -10,10 +10,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type Config struct {
+}
+
 type Server struct {
-	Router  *gin.Engine
+	router  *gin.Engine
 	pg_pool *pgxpool.Pool
 	cache   *redis.Client
+	config  *Config
 }
 
 func NewServer() *Server {
@@ -23,6 +27,8 @@ func NewServer() *Server {
 		}
 	}
 
+	router := gin.Default()
+
 	//do i need to defer closing connections somewhere?
 	pg_pool, err := pgxpool.New(context.Background(), os.Getenv("POSTGRES_CONNECTION_STRING"))
 	handleErr(err)
@@ -31,12 +37,13 @@ func NewServer() *Server {
 	handleErr(err)
 	cache := redis.NewClient(opt)
 
-	router := gin.Default()
+	config := &Config{}
 
 	server := &Server{
-		Router:  router,
+		router:  router,
 		pg_pool: pg_pool,
 		cache:   cache,
+		config:  config,
 	}
 	server.mountHandlers()
 
@@ -44,14 +51,14 @@ func NewServer() *Server {
 }
 
 func (s *Server) mountHandlers() {
-	api := s.Router.Group("/rest")
+	api := s.router.Group("/rest")
 	{
 		api.GET("/ping", s.handlePing)
 	}
 }
 
 func (s *Server) Run(port string) {
-	err := s.Router.Run(port)
+	err := s.router.Run(port)
 	if err != nil {
 		log.Fatal("Failed to run gin router")
 	}
