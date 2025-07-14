@@ -53,7 +53,7 @@ func NewServer() *Server {
 func (s *Server) mountHandlers() {
 	api := s.router.Group("/rest")
 	{
-		api.GET("/ping", s.handlePing)
+		api.GET("/ping", s.WithAuth, s.handlePing)
 	}
 }
 

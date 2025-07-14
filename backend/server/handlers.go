@@ -18,6 +18,7 @@ func (s *Server) handlePing(c *gin.Context) {
 	xmlBody, err := xml.Marshal(subsonicRes)
 	if err != nil {
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
 	}
 	c.Data(http.StatusOK, "application/xml", xmlBody)
 }
