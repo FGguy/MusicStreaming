@@ -1,9 +1,7 @@
 package server
 
 import (
-	"context"
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,23 +18,8 @@ type Server struct {
 	config  *Config
 }
 
-func NewServer() *Server {
-	handleErr := func(err error) {
-		if err != nil {
-			log.Fatalf("Failed to create server\nError: %s", err)
-		}
-	}
-
+func NewServer(pg_pool *pgxpool.Pool, cache *redis.Client) *Server {
 	router := gin.Default()
-
-	//do i need to defer closing connections somewhere?
-	pg_pool, err := pgxpool.New(context.Background(), os.Getenv("POSTGRES_CONNECTION_STRING"))
-	handleErr(err)
-
-	opt, err := redis.ParseURL(os.Getenv("REDIS_CONNECTION_STRING"))
-	handleErr(err)
-	cache := redis.NewClient(opt)
-
 	config := &Config{}
 
 	server := &Server{

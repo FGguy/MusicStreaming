@@ -9,8 +9,9 @@ import (
 
 	sqlc "music-streaming/sql/sqlc"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -23,6 +24,24 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	pg_pool, err := pgxpool.New(context.Background(), os.Getenv("POSTGRES_CONNECTION_STRING"))
+	if err != nil {
+		log.Fatalf("Unable to connect to postgres Database in main, Err: %s", err)
+	}
+	defer pg_pool.Close()
+
+	opt, err := redis.ParseURL(os.Getenv("REDIS_CONNECTION_STRING"))
+	if err != nil {
+		log.Fatalf("Unable to connect to redis Database in main, Err: %s", err)
+	}
+	cache := redis.NewClient(opt)
+
+	sqlSetup(pg_pool)
+
+	server.NewServer(pg_pool, cache).Run(fmt.Sprintf(":%d", PORT))
+}
+
+func sqlSetup(pg_pool *pgxpool.Pool) {
 	ctx := context.Background()
 
 	adminName, adminNameDefined := os.LookupEnv("ADMIN_NAME")
@@ -31,16 +50,16 @@ func main() {
 		log.Fatal("Failed to get admin credentials from ENV. Make sure the variables ADMIN_NAME and ADMIN_PASSWORD are defined in your .env or in the docker-compose file.")
 	}
 
-	conn, err := pgx.Connect(ctx, os.Getenv("POSTGRES_CONNECTION_STRING"))
-	if err != nil {
-		log.Fatalf("Unable to connect to Database in main, Err: %s", err)
-	}
-	defer conn.Close(ctx)
-
 	createTablesScript, err := os.ReadFile("./sql/tables.sql")
 	if err != nil {
 		log.Fatalf("Failed to open script for creating tables, Err: %s", err)
 	}
+
+	conn, err := pg_pool.Acquire(ctx)
+	if err != nil {
+		log.Fatalf("Failed to acquire connection from postgres connection pool in main, Err: %s", err)
+	}
+	defer conn.Release()
 
 	_, err = conn.Exec(ctx, string(createTablesScript)) //create all tables
 	if err != nil {
@@ -52,6 +71,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create admin user, Err: %s", err)
 	}
-
-	server.NewServer().Run(fmt.Sprintf(":%d", PORT))
 }
