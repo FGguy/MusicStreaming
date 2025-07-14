@@ -8,6 +8,11 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-default}
+      - REDIS_USERNAME=${REDIS_USERNAME:-default}
+    volumes:
+      - music_streaming:/data
 
   postgres:
     container_name: music_streaming_postgres
@@ -15,8 +20,8 @@ services:
     restart: always
     environment:
       POSTGRES_DB: music_streaming
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mypassword}
+      POSTGRES_USER: ${POSTGRES_USER:-myuser}
     volumes:
       - music_streaming:/var/lib/postgresql/data
     ports:
