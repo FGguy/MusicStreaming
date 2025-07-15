@@ -1,8 +1,25 @@
 CREATE TABLE IF NOT EXISTS Users (
-    name VARCHAR(30),
+    username VARCHAR(30),
     password VARCHAR(50) NOT NULL,
+    email VARCHAR(50) NOT NULL,
+
+    --Roles
+    ldapAuthenticated BOOLEAN NOT NULL DEFAULT FALSE,
+    adminRole BOOLEAN NOT NULL DEFAULT FALSE,
+    settingsRole BOOLEAN NOT NULL DEFAULT TRUE,
+    streamRole BOOLEAN NOT NULL DEFAULT TRUE,
+    jukeboxRole BOOLEAN NOT NULL DEFAULT FALSE,
+    downloadRole BOOLEAN NOT NULL DEFAULT FALSE,
+    uploadRole BOOLEAN NOT NULL DEFAULT FALSE,
+    playlistRole BOOLEAN NOT NULL DEFAULT FALSE,
+    coverArtRole BOOLEAN NOT NULL DEFAULT FALSE,
+    commentRole BOOLEAN NOT NULL DEFAULT FALSE,
+    podcastRole BOOLEAN NOT NULL DEFAULT FALSE,
+    shareRole BOOLEAN NOT NULL DEFAULT FALSE,
+    videoConversionRole BOOLEAN NOT NULL DEFAULT FALSE,
+    musicFolderId JSONB,
     PRIMARY KEY(name)
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_name
-ON Users(name);
+CREATE INDEX IF NOT EXISTS idx_users_username
+ON Users(username);

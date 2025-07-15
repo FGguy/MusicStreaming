@@ -7,64 +7,219 @@ package sql
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const changeUserPassword = `-- name: ChangeUserPassword :one
+UPDATE Users SET password = $2
+WHERE username = $1 RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
+`
+
+type ChangeUserPasswordParams struct {
+	Username pgtype.Text
+	Password string
+}
+
+func (q *Queries) ChangeUserPassword(ctx context.Context, arg ChangeUserPasswordParams) (User, error) {
+	row := q.db.QueryRow(ctx, changeUserPassword, arg.Username, arg.Password)
+	var i User
+	err := row.Scan(
+		&i.Username,
+		&i.Password,
+		&i.Email,
+		&i.Ldapauthenticated,
+		&i.Adminrole,
+		&i.Settingsrole,
+		&i.Streamrole,
+		&i.Jukeboxrole,
+		&i.Downloadrole,
+		&i.Uploadrole,
+		&i.Playlistrole,
+		&i.Coverartrole,
+		&i.Commentrole,
+		&i.Podcastrole,
+		&i.Sharerole,
+		&i.Videoconversionrole,
+		&i.Musicfolderid,
+	)
+	return i, err
+}
+
+const createAdminUser = `-- name: CreateAdminUser :one
+INSERT INTO Users (username, password, email, adminRole)
+VALUES ($1, $2, $3, TRUE) 
+ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
+RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
+`
+
+type CreateAdminUserParams struct {
+	Username pgtype.Text
+	Password string
+	Email    string
+}
+
+func (q *Queries) CreateAdminUser(ctx context.Context, arg CreateAdminUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createAdminUser, arg.Username, arg.Password, arg.Email)
+	var i User
+	err := row.Scan(
+		&i.Username,
+		&i.Password,
+		&i.Email,
+		&i.Ldapauthenticated,
+		&i.Adminrole,
+		&i.Settingsrole,
+		&i.Streamrole,
+		&i.Jukeboxrole,
+		&i.Downloadrole,
+		&i.Uploadrole,
+		&i.Playlistrole,
+		&i.Coverartrole,
+		&i.Commentrole,
+		&i.Podcastrole,
+		&i.Sharerole,
+		&i.Videoconversionrole,
+		&i.Musicfolderid,
+	)
+	return i, err
+}
+
+const createDefaultUser = `-- name: CreateDefaultUser :one
+INSERT INTO Users (username, password, email)
+VALUES ($1, $2, $3) 
+ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
+RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
+`
+
+type CreateDefaultUserParams struct {
+	Username pgtype.Text
+	Password string
+	Email    string
+}
+
+func (q *Queries) CreateDefaultUser(ctx context.Context, arg CreateDefaultUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createDefaultUser, arg.Username, arg.Password, arg.Email)
+	var i User
+	err := row.Scan(
+		&i.Username,
+		&i.Password,
+		&i.Email,
+		&i.Ldapauthenticated,
+		&i.Adminrole,
+		&i.Settingsrole,
+		&i.Streamrole,
+		&i.Jukeboxrole,
+		&i.Downloadrole,
+		&i.Uploadrole,
+		&i.Playlistrole,
+		&i.Coverartrole,
+		&i.Commentrole,
+		&i.Podcastrole,
+		&i.Sharerole,
+		&i.Videoconversionrole,
+		&i.Musicfolderid,
+	)
+	return i, err
+}
 
 const deleteUser = `-- name: DeleteUser :one
 DELETE FROM Users 
-WHERE name = $1 RETURNING name, password
+WHERE username = $1 RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, name string) (User, error) {
-	row := q.db.QueryRow(ctx, deleteUser, name)
+func (q *Queries) DeleteUser(ctx context.Context, username pgtype.Text) (User, error) {
+	row := q.db.QueryRow(ctx, deleteUser, username)
 	var i User
-	err := row.Scan(&i.Name, &i.Password)
+	err := row.Scan(
+		&i.Username,
+		&i.Password,
+		&i.Email,
+		&i.Ldapauthenticated,
+		&i.Adminrole,
+		&i.Settingsrole,
+		&i.Streamrole,
+		&i.Jukeboxrole,
+		&i.Downloadrole,
+		&i.Uploadrole,
+		&i.Playlistrole,
+		&i.Coverartrole,
+		&i.Commentrole,
+		&i.Podcastrole,
+		&i.Sharerole,
+		&i.Videoconversionrole,
+		&i.Musicfolderid,
+	)
 	return i, err
 }
 
-const getUserByName = `-- name: GetUserByName :one
-SELECT name, password FROM Users
-WHERE name = $1 LIMIT 1
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid FROM Users
+WHERE username = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByName, name)
+func (q *Queries) GetUserByUsername(ctx context.Context, username pgtype.Text) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
 	var i User
-	err := row.Scan(&i.Name, &i.Password)
+	err := row.Scan(
+		&i.Username,
+		&i.Password,
+		&i.Email,
+		&i.Ldapauthenticated,
+		&i.Adminrole,
+		&i.Settingsrole,
+		&i.Streamrole,
+		&i.Jukeboxrole,
+		&i.Downloadrole,
+		&i.Uploadrole,
+		&i.Playlistrole,
+		&i.Coverartrole,
+		&i.Commentrole,
+		&i.Podcastrole,
+		&i.Sharerole,
+		&i.Videoconversionrole,
+		&i.Musicfolderid,
+	)
 	return i, err
 }
 
-const insertUser = `-- name: InsertUser :one
-INSERT INTO Users (name, password)
-VALUES ($1, $2) 
-ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-RETURNING name, password
+const getUsers = `-- name: GetUsers :many
+SELECT username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid FROM Users
 `
 
-type InsertUserParams struct {
-	Name     string
-	Password string
-}
-
-func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, insertUser, arg.Name, arg.Password)
-	var i User
-	err := row.Scan(&i.Name, &i.Password)
-	return i, err
-}
-
-const updateUserPassword = `-- name: UpdateUserPassword :one
-UPDATE Users SET password = $2
-WHERE name = $1 RETURNING name, password
-`
-
-type UpdateUserPasswordParams struct {
-	Name     string
-	Password string
-}
-
-func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
-	row := q.db.QueryRow(ctx, updateUserPassword, arg.Name, arg.Password)
-	var i User
-	err := row.Scan(&i.Name, &i.Password)
-	return i, err
+func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, getUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.Username,
+			&i.Password,
+			&i.Email,
+			&i.Ldapauthenticated,
+			&i.Adminrole,
+			&i.Settingsrole,
+			&i.Streamrole,
+			&i.Jukeboxrole,
+			&i.Downloadrole,
+			&i.Uploadrole,
+			&i.Playlistrole,
+			&i.Coverartrole,
+			&i.Commentrole,
+			&i.Podcastrole,
+			&i.Sharerole,
+			&i.Videoconversionrole,
+			&i.Musicfolderid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

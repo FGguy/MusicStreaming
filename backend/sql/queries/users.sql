@@ -1,17 +1,26 @@
--- name: InsertUser :one
-INSERT INTO Users (name, password)
-VALUES ($1, $2) 
-ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+-- name: CreateAdminUser :one
+INSERT INTO Users (username, password, email, adminRole)
+VALUES ($1, $2, $3, TRUE) 
+ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
+RETURNING *;
+
+-- name: CreateDefaultUser :one
+INSERT INTO Users (username, password, email)
+VALUES ($1, $2, $3) 
+ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
 RETURNING *;
 
 -- name: DeleteUser :one
 DELETE FROM Users 
-WHERE name = $1 RETURNING *;
+WHERE username = $1 RETURNING *;
 
--- name: GetUserByName :one
+-- name: GetUserByUsername :one
 SELECT * FROM Users
-WHERE name = $1 LIMIT 1;
+WHERE username = $1 LIMIT 1;
 
--- name: UpdateUserPassword :one
+-- name: GetUsers :many
+SELECT * FROM Users;
+
+-- name: ChangeUserPassword :one
 UPDATE Users SET password = $2
-WHERE name = $1 RETURNING *;
+WHERE username = $1 RETURNING *;

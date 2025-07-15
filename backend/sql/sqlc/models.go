@@ -4,7 +4,26 @@
 
 package sql
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
 type User struct {
-	Name     string
-	Password string
+	Username            pgtype.Text
+	Password            string
+	Email               string
+	Ldapauthenticated   bool
+	Adminrole           bool
+	Settingsrole        bool
+	Streamrole          bool
+	Jukeboxrole         bool
+	Downloadrole        bool
+	Uploadrole          bool
+	Playlistrole        bool
+	Coverartrole        bool
+	Commentrole         bool
+	Podcastrole         bool
+	Sharerole           bool
+	Videoconversionrole bool
+	Musicfolderid       []byte
 }
