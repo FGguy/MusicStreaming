@@ -5,8 +5,10 @@ import (
 )
 
 const (
-	Xmlns           = "http://subsonic.org/restapi"
-	SubsonicVersion = "1.16.1"
+	Xmlns                = "http://subsonic.org/restapi"
+	SubsonicVersion      = "1.16.1"
+	SubsonicMajorVersion = 1
+	SubsonicMinorVersion = 16
 )
 
 var SubsonicErrorMessages = map[string]string{
