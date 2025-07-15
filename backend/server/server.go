@@ -34,7 +34,7 @@ func NewServer(pg_pool *pgxpool.Pool, cache *redis.Client) *Server {
 }
 
 func (s *Server) mountHandlers() {
-	api := s.router.Group("/rest", s.SubValidateQParamsMiddleware, s.SubWithAuth)
+	api := s.router.Group("/rest", s.subValidateQParamsMiddleware, s.subWithAuth)
 	{
 		api.GET("/ping", s.handlePing)
 	}

@@ -15,9 +15,10 @@ import (
 	subxml "music-streaming/util/subxml"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (s *Server) SubValidateQParamsMiddleware(c *gin.Context) {
+func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 	/*
 		Do not care about 'p' or 'f' query params
 		password needs to be hashed
@@ -66,7 +67,7 @@ func (s *Server) SubValidateQParamsMiddleware(c *gin.Context) {
 	}
 }
 
-func (s *Server) SubWithAuth(c *gin.Context) {
+func (s *Server) subWithAuth(c *gin.Context) {
 
 	//Shouldn't panic, if it does its kinda cooked
 	qUser := c.MustGet("u").(string)
@@ -88,13 +89,13 @@ func (s *Server) SubWithAuth(c *gin.Context) {
 		defer conn.Release()
 		query := sqlc.New(conn)
 
-		user, err := query.GetUserByName(ctx, qUser)
+		user, err := query.GetUserByUsername(ctx, pgtype.Text{String: qUser, Valid: true})
 		if err != nil {
 			buildAndSendXMLError(c, "40") //user doesnt exist
 			return
 		}
 
-		err = s.cache.Set(ctx, user.Name, user.Password, time.Minute*10).Err()
+		err = s.cache.Set(ctx, user.Username.String, user.Password, time.Minute*10).Err()
 		if err != nil {
 			if gin.Mode() == gin.DebugMode {
 				log.Printf("Failed creating cache entry for user credentials, Err: %s", err)
