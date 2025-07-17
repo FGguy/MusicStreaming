@@ -45,6 +45,9 @@ func main() {
 func sqlSetup(pg_pool *pgxpool.Pool) {
 	ctx := context.Background()
 
+	//drop all tables if set to true
+	cleanStart := os.Getenv("CLEAN_START")
+
 	adminName, adminNameDefined := os.LookupEnv("ADMIN_NAME")
 	adminPassword, adminPasswordDefined := os.LookupEnv("ADMIN_PASSWORD")
 	adminEmail, adminEmailDefined := os.LookupEnv("ADMIN_EMAIL")
@@ -52,16 +55,28 @@ func sqlSetup(pg_pool *pgxpool.Pool) {
 		log.Fatal("Failed to get admin credentials from ENV. Make sure the variables ADMIN_NAME and ADMIN_PASSWORD are defined in your .env or in the docker-compose file.")
 	}
 
-	createTablesScript, err := os.ReadFile("./sql/tables.sql")
-	if err != nil {
-		log.Fatalf("Failed to open script for creating tables, Err: %s", err)
-	}
-
 	conn, err := pg_pool.Acquire(ctx)
 	if err != nil {
 		log.Fatalf("Failed to acquire connection from postgres connection pool in main, Err: %s", err)
 	}
 	defer conn.Release()
+
+	if cleanStart == "true" {
+		dropTablesScript, err := os.ReadFile("./sql/droptables.sql")
+		if err != nil {
+			log.Fatalf("Failed to open script for dropping tables, Err: %s", err)
+		}
+
+		_, err = conn.Exec(ctx, string(dropTablesScript)) //create all tables
+		if err != nil {
+			log.Fatalf("Failed to drop tables in main, Err: %s", err)
+		}
+	}
+
+	createTablesScript, err := os.ReadFile("./sql/tables.sql")
+	if err != nil {
+		log.Fatalf("Failed to open script for creating tables, Err: %s", err)
+	}
 
 	_, err = conn.Exec(ctx, string(createTablesScript)) //create all tables
 	if err != nil {
