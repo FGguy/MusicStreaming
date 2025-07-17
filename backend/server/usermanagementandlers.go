@@ -17,6 +17,8 @@ import (
 
 // GET
 func (s *Server) hangleGetUser(c *gin.Context) {
+	u := c.MustGet("u").(string)
+
 	username := c.Query("username")
 	if username == "" {
 		buildAndSendXMLError(c, "10")
@@ -24,6 +26,19 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 	}
 
 	ctx := context.Background()
+
+	var cachedUser subsonic.SubsonicRedisUser
+	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	if err != nil { //if user is authenticated their info should be cached
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
+	if !cachedUser.AdminRole && u != username {
+		buildAndSendXMLError(c, "50")
+		return
+	}
+
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
 		buildAndSendXMLError(c, "0")
@@ -38,7 +53,7 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicResponse{
+	subsonicRes := subsonic.SubsonicXmlResponse{
 		Xmlns:   subsonic.Xmlns,
 		Status:  "ok",
 		Version: subsonic.SubsonicVersion,
@@ -56,7 +71,22 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 // GET
 func (s *Server) hangleGetUsers(c *gin.Context) {
+	u := c.MustGet("u").(string)
+
 	ctx := context.Background()
+
+	var cachedUser subsonic.SubsonicRedisUser
+	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	if err != nil { //if user is authenticated their info should be cached
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
+	if !cachedUser.AdminRole {
+		buildAndSendXMLError(c, "50")
+		return
+	}
+
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
 		buildAndSendXMLError(c, "0")
@@ -71,12 +101,12 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 		return
 	}
 
-	xmlUsers := make([]*subsonic.SubsonicUser, 0, len(users))
+	xmlUsers := make([]*subsonic.SubsonicXmlUser, 0, len(users))
 	for _, user := range users {
 		xmlUsers = append(xmlUsers, mapSqlUserToXmlUser(&user))
 	}
 
-	subsonicRes := subsonic.SubsonicResponse{
+	subsonicRes := subsonic.SubsonicXmlResponse{
 		Xmlns:   subsonic.Xmlns,
 		Status:  "ok",
 		Version: subsonic.SubsonicVersion,
@@ -93,6 +123,22 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 
 // POST
 func (s *Server) handleCreateUser(c *gin.Context) {
+	u := c.MustGet("u").(string)
+
+	ctx := context.Background()
+
+	var cachedUser subsonic.SubsonicRedisUser
+	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	if err != nil { //if user is authenticated their info should be cached
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
+	if !cachedUser.AdminRole {
+		buildAndSendXMLError(c, "50")
+		return
+	}
+
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 	email := c.PostForm("email")
@@ -101,7 +147,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicResponse{
+	subsonicRes := subsonic.SubsonicXmlResponse{
 		Xmlns:   subsonic.Xmlns,
 		Status:  "ok",
 		Version: subsonic.SubsonicVersion,
@@ -150,7 +196,6 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	valuesString := strings.Join(values, ", ")
 	createUserQueryString := fmt.Sprintf("INSERT INTO Users (%s) VALUES (%s) ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username RETURNING *;", paramsString, valuesString)
 
-	ctx := context.Background()
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
 		buildAndSendXMLError(c, "0")
@@ -173,14 +218,30 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 }
 
 // POST
-func (s *Server) hangleUpdateUser(c *gin.Context) {
+func (s *Server) handleUpdateUser(c *gin.Context) {
+	u := c.MustGet("u").(string)
+
 	username := c.PostForm("username")
 	if username == "" {
 		buildAndSendXMLError(c, "10")
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicResponse{
+	ctx := context.Background()
+
+	var cachedUser subsonic.SubsonicRedisUser
+	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	if err != nil { //if user is authenticated their info should be cached
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
+	if !cachedUser.AdminRole && (cachedUser.Username != username || !cachedUser.SettingsRole) {
+		buildAndSendXMLError(c, "50")
+		return
+	}
+
+	subsonicRes := subsonic.SubsonicXmlResponse{
 		Xmlns:   subsonic.Xmlns,
 		Status:  "ok",
 		Version: subsonic.SubsonicVersion,
@@ -232,7 +293,6 @@ func (s *Server) hangleUpdateUser(c *gin.Context) {
 	updatesString := strings.Join(updates, ",")
 	updateUserQueryString := fmt.Sprintf("UPDATE Users SET %s WHERE username = %s;", updatesString, username)
 
-	ctx := context.Background()
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
 		buildAndSendXMLError(c, "0")
@@ -255,13 +315,29 @@ func (s *Server) hangleUpdateUser(c *gin.Context) {
 }
 
 // POST
-func (s *Server) hangleDeleteUser(c *gin.Context) {
+func (s *Server) handleDeleteUser(c *gin.Context) {
+	u := c.MustGet("u").(string)
+
+	ctx := context.Background()
+
+	var cachedUser subsonic.SubsonicRedisUser
+	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	if err != nil { //if user is authenticated their info should be cached
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
+	if !cachedUser.AdminRole {
+		buildAndSendXMLError(c, "50")
+		return
+	}
+
 	username := c.PostForm("username")
 	if username == "" {
 		buildAndSendXMLError(c, "10")
 		return
 	}
-	ctx := context.Background()
+
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
 		buildAndSendXMLError(c, "0")
@@ -276,7 +352,7 @@ func (s *Server) hangleDeleteUser(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicResponse{
+	subsonicRes := subsonic.SubsonicXmlResponse{
 		Xmlns:   subsonic.Xmlns,
 		Status:  "ok",
 		Version: subsonic.SubsonicVersion,
@@ -292,13 +368,34 @@ func (s *Server) hangleDeleteUser(c *gin.Context) {
 
 // POST
 func (s *Server) handleChangePassword(c *gin.Context) {
+	u := c.MustGet("u").(string)
+
 	username := c.PostForm("username")
+	if username == "" {
+		buildAndSendXMLError(c, "10")
+		return
+	}
+
+	ctx := context.Background()
+
+	var cachedUser subsonic.SubsonicRedisUser
+	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	if err != nil { //if user is authenticated their info should be cached
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
+	if !cachedUser.AdminRole && (cachedUser.Username != username) {
+		buildAndSendXMLError(c, "50")
+		return
+	}
+
 	password := c.PostForm("password")
 	if username == "" || password == "" {
 		buildAndSendXMLError(c, "10")
 		return
 	}
-	ctx := context.Background()
+
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
 		buildAndSendXMLError(c, "0")
@@ -313,7 +410,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicResponse{
+	subsonicRes := subsonic.SubsonicXmlResponse{
 		Xmlns:   subsonic.Xmlns,
 		Status:  "ok",
 		Version: subsonic.SubsonicVersion,
@@ -327,8 +424,8 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	c.Data(http.StatusOK, "application/xml", xmlBody)
 }
 
-func mapSqlUserToXmlUser(user *sqlc.User) *subsonic.SubsonicUser {
-	return &subsonic.SubsonicUser{
+func mapSqlUserToXmlUser(user *sqlc.User) *subsonic.SubsonicXmlUser {
+	return &subsonic.SubsonicXmlUser{
 		Username:            user.Username.String,
 		Email:               user.Email,
 		ScrobblingEnabled:   user.Scrobblingenabled,

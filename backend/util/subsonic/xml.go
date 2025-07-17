@@ -4,23 +4,23 @@ import (
 	"encoding/xml"
 )
 
-type SubsonicResponse struct {
-	XMLName xml.Name        `xml:"subsonic-response"`
-	Xmlns   string          `xml:"xmlns,attr"`
-	Status  string          `xml:"status,attr"`
-	Version string          `xml:"version,attr"`
-	Error   *SubsonicError  `xml:"error,omitempty"`
-	User    *SubsonicUser   `xml:"user,omitempty"`
-	Users   []*SubsonicUser `xml:"users>user,omitempty"`
+type SubsonicXmlResponse struct {
+	XMLName xml.Name           `xml:"subsonic-response"`
+	Xmlns   string             `xml:"xmlns,attr"`
+	Status  string             `xml:"status,attr"`
+	Version string             `xml:"version,attr"`
+	Error   *SubsonicXmlError  `xml:"error,omitempty"`
+	User    *SubsonicXmlUser   `xml:"user,omitempty"`
+	Users   []*SubsonicXmlUser `xml:"users>user,omitempty"`
 }
 
-type SubsonicError struct {
+type SubsonicXmlError struct {
 	XMLName xml.Name `xml:"error"`
 	Code    string   `xml:"code,attr"`
 	Message string   `xml:"message,attr"`
 }
 
-type SubsonicUser struct {
+type SubsonicXmlUser struct {
 	XMLName             xml.Name `xml:"user"`
 	Username            string   `xml:"username,attr"`
 	Email               string   `xml:"email,attr"`

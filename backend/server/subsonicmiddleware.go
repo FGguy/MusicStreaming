@@ -75,8 +75,9 @@ func (s *Server) subWithAuth(c *gin.Context) {
 	qSalt := c.MustGet("s").(string)
 
 	var password string
+	var cachedUser subsonic.SubsonicRedisUser
 	ctx := context.Background()
-	password, err := s.cache.Get(ctx, qUser).Result()
+	err := s.cache.Get(ctx, qUser).Scan(&cachedUser)
 	if err != nil {
 		conn, err := s.pg_pool.Acquire(ctx)
 		if err != nil {
@@ -95,7 +96,7 @@ func (s *Server) subWithAuth(c *gin.Context) {
 			return
 		}
 
-		err = s.cache.Set(ctx, user.Username.String, user.Password, time.Minute*10).Err()
+		err = s.cache.Set(ctx, user.Username.String, mapSqlUserToRedisUser(&user), time.Minute*10).Err()
 		if err != nil {
 			if gin.Mode() == gin.DebugMode {
 				log.Printf("Failed creating cache entry for user credentials, Err: %s", err)
@@ -104,6 +105,8 @@ func (s *Server) subWithAuth(c *gin.Context) {
 			return
 		}
 		password = user.Password
+	} else {
+		password = cachedUser.Password
 	}
 
 	//TODO: Change to support permissions
@@ -116,13 +119,13 @@ func (s *Server) subWithAuth(c *gin.Context) {
 // Util
 func buildAndSendXMLError(c *gin.Context, errorCode string) {
 	c.Abort()
-	subsonicRes := subsonic.SubsonicResponse{
+	subsonicRes := subsonic.SubsonicXmlResponse{
 		Xmlns:   subsonic.Xmlns,
 		Status:  "failed",
 		Version: subsonic.SubsonicVersion,
 	}
 
-	subsonicRes.Error = &subsonic.SubsonicError{
+	subsonicRes.Error = &subsonic.SubsonicXmlError{
 		Code:    errorCode,
 		Message: subsonic.SubsonicErrorMessages[errorCode],
 	}
@@ -133,4 +136,28 @@ func buildAndSendXMLError(c *gin.Context, errorCode string) {
 		return
 	}
 	c.Data(http.StatusOK, "application/xml", xmlBody)
+}
+
+func mapSqlUserToRedisUser(user *sqlc.User) *subsonic.SubsonicRedisUser {
+	return &subsonic.SubsonicRedisUser{
+		Username:            user.Username.String,
+		Email:               user.Email,
+		Password:            user.Password,
+		ScrobblingEnabled:   user.Scrobblingenabled,
+		LdapAuthenticated:   user.Ldapauthenticated,
+		AdminRole:           user.Adminrole,
+		SettingsRole:        user.Settingsrole,
+		StreamRole:          user.Streamrole,
+		JukeboxRole:         user.Jukeboxrole,
+		DownloadRole:        user.Downloadrole,
+		UploadRole:          user.Uploadrole,
+		PlaylistRole:        user.Playlistrole,
+		CoverArtRole:        user.Coverartrole,
+		CommentRole:         user.Commentrole,
+		PodcastRole:         user.Podcastrole,
+		ShareRole:           user.Sharerole,
+		VideoConversionRole: user.Videoconversionrole,
+		MusicfolderId:       strings.Split(user.Musicfolderid.String, ";"),
+		MaxBitRate:          user.Maxbitrate,
+	}
 }
