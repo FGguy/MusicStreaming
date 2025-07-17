@@ -2,17 +2,17 @@ package server
 
 import (
 	"encoding/xml"
-	subxml "music-streaming/util/subxml"
+	subsonic "music-streaming/util/subsonic"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) handlePing(c *gin.Context) {
-	subsonicRes := subxml.SubsonicResponse{
-		Xmlns:   subxml.Xmlns,
+	subsonicRes := subsonic.SubsonicResponse{
+		Xmlns:   subsonic.Xmlns,
 		Status:  "ok",
-		Version: subxml.SubsonicVersion,
+		Version: subsonic.SubsonicVersion,
 	}
 
 	xmlBody, err := xml.Marshal(subsonicRes)

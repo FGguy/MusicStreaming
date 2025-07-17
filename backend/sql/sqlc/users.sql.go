@@ -13,7 +13,7 @@ import (
 
 const changeUserPassword = `-- name: ChangeUserPassword :one
 UPDATE Users SET password = $2
-WHERE username = $1 RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
+WHERE username = $1 RETURNING username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate
 `
 
 type ChangeUserPasswordParams struct {
@@ -28,6 +28,7 @@ func (q *Queries) ChangeUserPassword(ctx context.Context, arg ChangeUserPassword
 		&i.Username,
 		&i.Password,
 		&i.Email,
+		&i.Scrobblingenabled,
 		&i.Ldapauthenticated,
 		&i.Adminrole,
 		&i.Settingsrole,
@@ -42,6 +43,7 @@ func (q *Queries) ChangeUserPassword(ctx context.Context, arg ChangeUserPassword
 		&i.Sharerole,
 		&i.Videoconversionrole,
 		&i.Musicfolderid,
+		&i.Maxbitrate,
 	)
 	return i, err
 }
@@ -50,7 +52,7 @@ const createAdminUser = `-- name: CreateAdminUser :one
 INSERT INTO Users (username, password, email, adminRole)
 VALUES ($1, $2, $3, TRUE) 
 ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
-RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
+RETURNING username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate
 `
 
 type CreateAdminUserParams struct {
@@ -66,6 +68,7 @@ func (q *Queries) CreateAdminUser(ctx context.Context, arg CreateAdminUserParams
 		&i.Username,
 		&i.Password,
 		&i.Email,
+		&i.Scrobblingenabled,
 		&i.Ldapauthenticated,
 		&i.Adminrole,
 		&i.Settingsrole,
@@ -80,6 +83,7 @@ func (q *Queries) CreateAdminUser(ctx context.Context, arg CreateAdminUserParams
 		&i.Sharerole,
 		&i.Videoconversionrole,
 		&i.Musicfolderid,
+		&i.Maxbitrate,
 	)
 	return i, err
 }
@@ -88,7 +92,7 @@ const createDefaultUser = `-- name: CreateDefaultUser :one
 INSERT INTO Users (username, password, email)
 VALUES ($1, $2, $3) 
 ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username
-RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
+RETURNING username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate
 `
 
 type CreateDefaultUserParams struct {
@@ -104,6 +108,7 @@ func (q *Queries) CreateDefaultUser(ctx context.Context, arg CreateDefaultUserPa
 		&i.Username,
 		&i.Password,
 		&i.Email,
+		&i.Scrobblingenabled,
 		&i.Ldapauthenticated,
 		&i.Adminrole,
 		&i.Settingsrole,
@@ -118,13 +123,14 @@ func (q *Queries) CreateDefaultUser(ctx context.Context, arg CreateDefaultUserPa
 		&i.Sharerole,
 		&i.Videoconversionrole,
 		&i.Musicfolderid,
+		&i.Maxbitrate,
 	)
 	return i, err
 }
 
 const deleteUser = `-- name: DeleteUser :one
 DELETE FROM Users 
-WHERE username = $1 RETURNING username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid
+WHERE username = $1 RETURNING username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, username pgtype.Text) (User, error) {
@@ -134,6 +140,7 @@ func (q *Queries) DeleteUser(ctx context.Context, username pgtype.Text) (User, e
 		&i.Username,
 		&i.Password,
 		&i.Email,
+		&i.Scrobblingenabled,
 		&i.Ldapauthenticated,
 		&i.Adminrole,
 		&i.Settingsrole,
@@ -148,12 +155,13 @@ func (q *Queries) DeleteUser(ctx context.Context, username pgtype.Text) (User, e
 		&i.Sharerole,
 		&i.Videoconversionrole,
 		&i.Musicfolderid,
+		&i.Maxbitrate,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid FROM Users
+SELECT username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate FROM Users
 WHERE username = $1 LIMIT 1
 `
 
@@ -164,6 +172,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username pgtype.Text) (
 		&i.Username,
 		&i.Password,
 		&i.Email,
+		&i.Scrobblingenabled,
 		&i.Ldapauthenticated,
 		&i.Adminrole,
 		&i.Settingsrole,
@@ -178,12 +187,13 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username pgtype.Text) (
 		&i.Sharerole,
 		&i.Videoconversionrole,
 		&i.Musicfolderid,
+		&i.Maxbitrate,
 	)
 	return i, err
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT username, password, email, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid FROM Users
+SELECT username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate FROM Users
 `
 
 func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
@@ -199,6 +209,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 			&i.Username,
 			&i.Password,
 			&i.Email,
+			&i.Scrobblingenabled,
 			&i.Ldapauthenticated,
 			&i.Adminrole,
 			&i.Settingsrole,
@@ -213,6 +224,7 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 			&i.Sharerole,
 			&i.Videoconversionrole,
 			&i.Musicfolderid,
+			&i.Maxbitrate,
 		); err != nil {
 			return nil, err
 		}

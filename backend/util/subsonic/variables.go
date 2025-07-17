@@ -1,8 +1,4 @@
-package subxml
-
-import (
-	"encoding/xml"
-)
+package subsonic
 
 const (
 	Xmlns                = "http://subsonic.org/restapi"
@@ -12,7 +8,26 @@ const (
 )
 
 var (
+	SubsonicValidBitRates = []string{
+		"0",
+		"32",
+		"40",
+		"48",
+		"56",
+		"64",
+		"80",
+		"96",
+		"112",
+		"128",
+		"160",
+		"192",
+		"224",
+		"256",
+		"320",
+	}
+
 	SubsonicUserRoles = []string{
+		"scrobblingEnabled",
 		"ldapAuthenticated",
 		"adminRole",
 		"settingsRole",
@@ -26,7 +41,6 @@ var (
 		"podcastRole",
 		"shareRole",
 		"videoConversionRole",
-		"musicFolderId",
 	}
 
 	SubsonicErrorMessages = map[string]string{
@@ -41,17 +55,3 @@ var (
 		"70": "The requested data was not found.",
 	}
 )
-
-type SubsonicResponse struct {
-	XMLName xml.Name       `xml:"subsonic-response"`
-	Xmlns   string         `xml:"xmlns,attr"`
-	Status  string         `xml:"status,attr"`
-	Version string         `xml:"version,attr"`
-	Error   *SubsonicError `xml:"error,omitempty"`
-}
-
-type SubsonicError struct {
-	XMLName xml.Name `xml:"error"`
-	Code    string   `xml:"code,attr"`
-	Message string   `xml:"message,attr"`
-}

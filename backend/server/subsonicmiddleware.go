@@ -12,7 +12,7 @@ import (
 	sqlc "music-streaming/sql/sqlc"
 
 	auth "music-streaming/util/auth"
-	subxml "music-streaming/util/subxml"
+	subsonic "music-streaming/util/subsonic"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -53,15 +53,15 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 		return
 	}
 
-	if clientMajorVersion > subxml.SubsonicMajorVersion {
+	if clientMajorVersion > subsonic.SubsonicMajorVersion {
 		buildAndSendXMLError(c, "30")
 		return
-	} else if clientMajorVersion < subxml.SubsonicMajorVersion {
+	} else if clientMajorVersion < subsonic.SubsonicMajorVersion {
 		buildAndSendXMLError(c, "20")
 		return
 	}
 
-	if clientMinorVersion > subxml.SubsonicMinorVersion {
+	if clientMinorVersion > subsonic.SubsonicMinorVersion {
 		buildAndSendXMLError(c, "30")
 		return
 	}
@@ -116,15 +116,15 @@ func (s *Server) subWithAuth(c *gin.Context) {
 // Util
 func buildAndSendXMLError(c *gin.Context, errorCode string) {
 	c.Abort()
-	subsonicRes := subxml.SubsonicResponse{
-		Xmlns:   subxml.Xmlns,
+	subsonicRes := subsonic.SubsonicResponse{
+		Xmlns:   subsonic.Xmlns,
 		Status:  "failed",
-		Version: subxml.SubsonicVersion,
+		Version: subsonic.SubsonicVersion,
 	}
 
-	subsonicRes.Error = &subxml.SubsonicError{
+	subsonicRes.Error = &subsonic.SubsonicError{
 		Code:    errorCode,
-		Message: subxml.SubsonicErrorMessages[errorCode],
+		Message: subsonic.SubsonicErrorMessages[errorCode],
 	}
 
 	xmlBody, err := xml.Marshal(subsonicRes)

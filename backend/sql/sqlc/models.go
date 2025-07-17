@@ -12,6 +12,7 @@ type User struct {
 	Username            pgtype.Text
 	Password            string
 	Email               string
+	Scrobblingenabled   bool
 	Ldapauthenticated   bool
 	Adminrole           bool
 	Settingsrole        bool
@@ -25,5 +26,6 @@ type User struct {
 	Podcastrole         bool
 	Sharerole           bool
 	Videoconversionrole bool
-	Musicfolderid       []byte
+	Musicfolderid       pgtype.Text
+	Maxbitrate          int32
 }

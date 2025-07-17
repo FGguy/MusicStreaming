@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS Users (
     email VARCHAR(50) NOT NULL,
 
     --Roles
+    scrobblingEnabled BOOLEAN NOT NULL DEFAULT FALSE,
     ldapAuthenticated BOOLEAN NOT NULL DEFAULT FALSE,
     adminRole BOOLEAN NOT NULL DEFAULT FALSE,
     settingsRole BOOLEAN NOT NULL DEFAULT TRUE,
@@ -17,7 +18,8 @@ CREATE TABLE IF NOT EXISTS Users (
     podcastRole BOOLEAN NOT NULL DEFAULT FALSE,
     shareRole BOOLEAN NOT NULL DEFAULT FALSE,
     videoConversionRole BOOLEAN NOT NULL DEFAULT FALSE,
-    musicFolderId JSONB,
+    musicFolderId TEXT,
+    maxBitRate INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY(name)
 );
 
