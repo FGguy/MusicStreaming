@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"log"
 	"net/http"
@@ -24,6 +25,8 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 		password needs to be hashed
 		only supported format will be xml
 	*/
+
+	//FIXME: use custom struct to bind with parameters
 	params := []string{"u", "t", "s", "v", "c"}
 	for _, param := range params {
 		if c.Query(param) == "" {
@@ -96,7 +99,15 @@ func (s *Server) subWithAuth(c *gin.Context) {
 			return
 		}
 
-		err = s.cache.Set(ctx, user.Username.String, mapSqlUserToRedisUser(&user), time.Minute*10).Err()
+		encodedUser, err := json.Marshal(mapSqlUserToRedisUser(&user))
+		if err != nil {
+			if gin.Mode() == gin.DebugMode {
+				log.Printf("Failed encoding user credentials, Err: %s", err)
+			}
+			buildAndSendXMLError(c, "0")
+			return
+		}
+		err = s.cache.Set(ctx, user.Username.String, encodedUser, time.Minute*10).Err()
 		if err != nil {
 			if gin.Mode() == gin.DebugMode {
 				log.Printf("Failed creating cache entry for user credentials, Err: %s", err)
@@ -131,11 +142,15 @@ func buildAndSendXMLError(c *gin.Context, errorCode string) {
 	}
 
 	xmlBody, err := xml.Marshal(subsonicRes)
+
+	//temp fix, disgusting
+	temp := strings.Replace(string(xmlBody), "></error>", "/>", 1)
+
 	if err != nil {
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
-	c.Data(http.StatusOK, "application/xml", xmlBody)
+	c.Data(http.StatusOK, "application/xml", []byte(temp))
 }
 
 func mapSqlUserToRedisUser(user *sqlc.User) *subsonic.SubsonicRedisUser {
