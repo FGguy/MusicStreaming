@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS Users (
     videoConversionRole BOOLEAN NOT NULL DEFAULT FALSE,
     musicFolderId TEXT,
     maxBitRate INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY(name)
+    PRIMARY KEY(username)
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username
