@@ -11,11 +11,11 @@ type SubsonicXmlResponse struct {
 	Version string             `xml:"version,attr"`
 	Error   *SubsonicXmlError  `xml:"error,omitempty"`
 	User    *SubsonicXmlUser   `xml:"user,omitempty"`
-	Users   []*SubsonicXmlUser `xml:"users>user,omitempty"`
+	Users   []*SubsonicXmlUser `xml:"users,omitempty"`
 }
 
 type SubsonicXmlError struct {
-	XMLName xml.Name `xml:"error"`
+	XMLName xml.Name `xml:"error,omitempty"`
 	Code    string   `xml:"code,attr"`
 	Message string   `xml:"message,attr"`
 }
