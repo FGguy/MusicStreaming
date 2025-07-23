@@ -34,7 +34,7 @@ func Execute() {
 	}
 	cache := redis.NewClient(opt)
 
-	server.SqlSetup(pg_pool)
+	server.SqlSetup(pg_pool, false)
 
 	//Blocks here
 	server.NewServer(pg_pool, cache).Run(fmt.Sprintf(":%d", PORT))

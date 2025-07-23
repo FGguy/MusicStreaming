@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SqlSetup(pg_pool *pgxpool.Pool) {
+func SqlSetup(pg_pool *pgxpool.Pool, test bool) {
 	ctx := context.Background()
 
 	//drop all tables if set to true
@@ -29,8 +29,19 @@ func SqlSetup(pg_pool *pgxpool.Pool) {
 	}
 	defer conn.Release()
 
+	//FIXME: find a better solution than wtv this is
+	var dropTables string
+	var tables string
+	if test {
+		dropTables = "../sql/droptables.sql"
+		tables = "../sql/tables.sql"
+	} else {
+		dropTables = "./sql/droptables.sql"
+		tables = "./sql/tables.sql"
+	}
+
 	if cleanStart == "true" {
-		dropTablesScript, err := os.ReadFile("../sql/droptables.sql")
+		dropTablesScript, err := os.ReadFile(dropTables)
 		if err != nil {
 			log.Fatalf("SqlSetup: Failed to open script for dropping tables, Err: %s", err)
 		}
@@ -41,7 +52,7 @@ func SqlSetup(pg_pool *pgxpool.Pool) {
 		}
 	}
 
-	createTablesScript, err := os.ReadFile("../sql/tables.sql")
+	createTablesScript, err := os.ReadFile(tables)
 	if err != nil {
 		log.Fatalf("SqlSetup: Failed to open script for creating tables, Err: %s", err)
 	}

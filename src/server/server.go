@@ -41,8 +41,8 @@ func (s *Server) mountHandlers() {
 		//User management routes
 		api.GET("/getUser", s.hangleGetUser)
 		api.GET("/getUsers", s.hangleGetUsers)
-		api.GET("/createUser", s.handleCreateUser)
-		api.GET("/updateUser", s.handleUpdateUser)
+		api.POST("/createUser", s.handleCreateUser)
+		api.POST("/updateUser", s.handleUpdateUser)
 		api.POST("/deleteUser", s.handleDeleteUser)
 		api.POST("/changePassword", s.handleChangePassword)
 	}

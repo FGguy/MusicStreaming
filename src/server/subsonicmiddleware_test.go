@@ -44,12 +44,45 @@ func getServerDependencies(t *testing.T) (pg_pool *pgxpool.Pool, cache *redis.Cl
 	}
 	cache = redis.NewClient(opt)
 
-	SqlSetup(pg_pool)
+	SqlSetup(pg_pool, true)
 
 	return pg_pool, cache, nil
 }
 
+func assertGetRequest(t *testing.T, req string, expectedStatus int, expectedBody string) {
+	resp, err := http.Get(req)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Expected no error reading body, got %v", err)
+	}
+
+	assert.Equal(t, expectedStatus, resp.StatusCode)
+	assert.Equal(t, expectedBody, string(bodyBytes))
+}
+
+func assertPostRequest(t *testing.T, req string, expectedStatus int, expectedBody string) {
+	resp, err := http.Post(req, "application/x-www-form-urlencoded", nil)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Expected no error reading body, got %v", err)
+	}
+
+	assert.Equal(t, expectedStatus, resp.StatusCode)
+	assert.Equal(t, expectedBody, string(bodyBytes))
+}
+
 func TestSubsonicMiddleware(t *testing.T) {
+	// Setup dependencies
 	pg_pool, cache, err := getServerDependencies(t)
 	if err != nil {
 		t.Fatalf("Failed to create dependencies for server in TestSystemHandlers, Error:%v", err)
@@ -67,98 +100,37 @@ func TestSubsonicMiddleware(t *testing.T) {
 		t.Fatalf("Failed to lookup admin credentials from environment")
 	}
 	hashedPassword := md5.Sum([]byte(adminPassword + salt))
+	hashedPasswordHex := hex.EncodeToString(hashedPassword[:])
+	baseURL := ts.URL + "/rest/ping"
 
 	t.Run("Should return an error for missing required parameter.", func(t *testing.T) {
-		resp, err := http.Get(fmt.Sprintf("%s/rest/ping?u=%s&t=%s&s=%s&v=%s", ts.URL, adminName, hex.EncodeToString(hashedPassword[:]), salt, subsonic.SubsonicVersion))
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-
-		bodyString, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, 200, resp.StatusCode)
-		assert.Equal(t, "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"failed\" version=\"1.16.1\"><error code=\"10\" message=\"Required parameter is missing.\"/></subsonic-response>", string(bodyString))
+		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s", baseURL, adminName, hashedPasswordHex, salt, subsonic.SubsonicVersion)
+		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="10" message="Required parameter is missing."/></subsonic-response>`
+		assertGetRequest(t, req, 200, expected)
 	})
 
 	t.Run("Should return an error for invalid incompatible client and server versions.", func(t *testing.T) {
-		//Server upgrade
-		resp, err := http.Get(fmt.Sprintf("%s/rest/ping?u=%s&t=%s&s=%s&v=%s&c=%s", ts.URL, adminName, hex.EncodeToString(hashedPassword[:]), salt, "2.0.0", "Test"))
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
+		req1 := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=2.0.0&c=Test", baseURL, adminName, hashedPasswordHex, salt)
+		expected1 := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="30" message="Incompatible Subsonic REST protocol version. Server must upgrade."/></subsonic-response>`
+		assertGetRequest(t, req1, 200, expected1)
 
-		bodyString, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, 200, resp.StatusCode)
-		assert.Equal(t, "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"failed\" version=\"1.16.1\"><error code=\"30\" message=\"Incompatible Subsonic REST protocol version. Server must upgrade.\"/></subsonic-response>", string(bodyString))
-
-		//Client upgrade
-		resp, err = http.Get(fmt.Sprintf("%s/rest/ping?u=%s&t=%s&s=%s&v=%s&c=%s", ts.URL, adminName, hex.EncodeToString(hashedPassword[:]), salt, "0.0.0", "Test"))
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-
-		bodyString, err = io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, 200, resp.StatusCode)
-		assert.Equal(t, "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"failed\" version=\"1.16.1\"><error code=\"20\" message=\"Incompatible Subsonic REST protocol version. Client must upgrade.\"/></subsonic-response>", string(bodyString))
+		req2 := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=0.0.0&c=Test", baseURL, adminName, hashedPasswordHex, salt)
+		expected2 := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="20" message="Incompatible Subsonic REST protocol version. Client must upgrade."/></subsonic-response>`
+		assertGetRequest(t, req2, 200, expected2)
 	})
 
 	t.Run("Should return a empty subsonic-response xml element.", func(t *testing.T) {
-		resp, err := http.Get(fmt.Sprintf("%s/rest/ping?u=%s&t=%s&s=%s&v=%s&c=%s", ts.URL, adminName, hex.EncodeToString(hashedPassword[:]), salt, subsonic.SubsonicVersion, "Test"))
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-
-		bodyString, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, 200, resp.StatusCode)
-		assert.Equal(t, "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.16.1\"></subsonic-response>", string(bodyString))
+		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s&c=Test", baseURL, adminName, hashedPasswordHex, salt, subsonic.SubsonicVersion)
+		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1"></subsonic-response>`
+		assertGetRequest(t, req, 200, expected)
 	})
 
 	t.Run("Should return error for wrong username or password.", func(t *testing.T) {
-		resp, err := http.Get(fmt.Sprintf("%s/rest/ping?u=%s&t=%s&s=%s&v=%s&c=%s", ts.URL, adminName, "WrongPassword", salt, subsonic.SubsonicVersion, "Test"))
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
+		req1 := fmt.Sprintf("%s?u=%s&t=WrongPassword&s=%s&v=%s&c=Test", baseURL, adminName, salt, subsonic.SubsonicVersion)
+		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="40" message="Wrong username or password."/></subsonic-response>`
+		assertGetRequest(t, req1, 200, expected)
 
-		bodyString, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, 200, resp.StatusCode)
-		assert.Equal(t, "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"failed\" version=\"1.16.1\"><error code=\"40\" message=\"Wrong username or password.\"/></subsonic-response>", string(bodyString))
-
-		resp, err = http.Get(fmt.Sprintf("%s/rest/ping?u=%s&t=%s&s=%s&v=%s&c=%s", ts.URL, "NonExistingUser", hex.EncodeToString(hashedPassword[:]), salt, subsonic.SubsonicVersion, "Test"))
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-
-		bodyString, err = io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Expected no error, got %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, 200, resp.StatusCode)
-		assert.Equal(t, "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"failed\" version=\"1.16.1\"><error code=\"40\" message=\"Wrong username or password.\"/></subsonic-response>", string(bodyString))
+		req2 := fmt.Sprintf("%s?u=NonExistingUser&t=%s&s=%s&v=%s&c=Test", baseURL, hashedPasswordHex, salt, subsonic.SubsonicVersion)
+		assertGetRequest(t, req2, 200, expected)
 	})
 }

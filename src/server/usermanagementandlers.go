@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"log"
 	sqlc "music-streaming/sql/sqlc"
 	subsonic "music-streaming/util/subsonic"
 	"net/http"
@@ -27,9 +29,21 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 	ctx := context.Background()
 
+	userString, err := s.cache.Get(ctx, u).Result() //bug
+	if err != nil {                                 //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
+		}
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
 	var cachedUser subsonic.SubsonicRedisUser
-	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed unmarshalling user, Err: %s", err)
+		}
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -75,9 +89,21 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 
 	ctx := context.Background()
 
+	userString, err := s.cache.Get(ctx, u).Result() //bug
+	if err != nil {                                 //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
+		}
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
 	var cachedUser subsonic.SubsonicRedisUser
-	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed unmarshalling user, Err: %s", err)
+		}
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -127,9 +153,21 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 
 	ctx := context.Background()
 
+	userString, err := s.cache.Get(ctx, u).Result() //bug
+	if err != nil {                                 //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
+		}
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
 	var cachedUser subsonic.SubsonicRedisUser
-	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed unmarshalling user, Err: %s", err)
+		}
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -139,9 +177,9 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	username := c.PostForm("username")
-	password := c.PostForm("password")
-	email := c.PostForm("email")
+	username := c.Query("username")
+	password := c.Query("password")
+	email := c.Query("email")
 	if username == "" || password == "" || email == "" {
 		buildAndSendXMLError(c, "10")
 		return
@@ -155,18 +193,18 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 
 	userParams := make(map[string]string)
 
-	userParams["username"] = fmt.Sprintf("\"%s\"", username)
-	userParams["password"] = fmt.Sprintf("\"%s\"", password)
-	userParams["email"] = fmt.Sprintf("\"%s\"", email)
+	userParams["username"] = fmt.Sprintf("'%s'", username)
+	userParams["password"] = fmt.Sprintf("'%s'", password)
+	userParams["email"] = fmt.Sprintf("'%s'", email)
 
 	for _, userRole := range subsonic.SubsonicUserRoles {
-		enabled := c.PostForm(userRole)
+		enabled := c.Query(userRole)
 		if enabled == "true" || enabled == "false" {
 			userParams[userRole] = enabled
 		}
 	}
 
-	musicFolders := c.PostFormArray("musicFolderId")
+	musicFolders := c.QueryArray("musicFolderId")
 	if len(musicFolders) > 0 {
 		ids := make([]string, 0, len(musicFolders))
 		for _, folderId := range musicFolders {
@@ -181,7 +219,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		userParams["musicFolders"] = fmt.Sprintf("\"%s\"", strings.Join(ids, ";"))
 	}
 
-	maxBitRate := c.PostForm("maxBitRate")
+	maxBitRate := c.Query("maxBitRate")
 	if slices.Contains(subsonic.SubsonicValidBitRates, maxBitRate) {
 		userParams["maxBitRate"] = maxBitRate
 	}
@@ -195,6 +233,9 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	paramsString := strings.Join(params, ", ")
 	valuesString := strings.Join(values, ", ")
 	createUserQueryString := fmt.Sprintf("INSERT INTO Users (%s) VALUES (%s) ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username RETURNING *;", paramsString, valuesString)
+	if gin.Mode() == gin.DebugMode {
+		log.Printf("Query String: %s", createUserQueryString)
+	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
@@ -205,6 +246,9 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 
 	_, err = conn.Exec(ctx, createUserQueryString) //create all tables
 	if err != nil {
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed creating user Err: %s", err)
+		}
 		buildAndSendXMLError(c, "0")
 		return
 	}
@@ -221,17 +265,32 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 func (s *Server) handleUpdateUser(c *gin.Context) {
 	u := c.MustGet("u").(string)
 
-	username := c.PostForm("username")
+	username := c.Query("username")
 	if username == "" {
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed getting user from params")
+		}
 		buildAndSendXMLError(c, "10")
 		return
 	}
 
 	ctx := context.Background()
 
+	userString, err := s.cache.Get(ctx, u).Result() //bug
+	if err != nil {                                 //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
+		}
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
 	var cachedUser subsonic.SubsonicRedisUser
-	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed unmarshalling user, Err: %s", err)
+		}
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -249,13 +308,13 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 	userUpdates := make(map[string]string)
 	for _, role := range subsonic.SubsonicUserRoles {
-		roleUpdate := c.PostForm(role)
+		roleUpdate := c.Query(role)
 		if roleUpdate == "true" || roleUpdate == "false" {
 			userUpdates[role] = roleUpdate
 		}
 	}
 	//check for update to musicFolderID
-	musicFolders := c.PostFormArray("musicFolderId")
+	musicFolders := c.QueryArray("musicFolderId")
 	if len(musicFolders) > 0 {
 		ids := make([]string, 0, len(musicFolders))
 		for _, folderId := range musicFolders {
@@ -267,10 +326,10 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 			ids = append(ids, folderId)
 		}
 		//none of the ids are invalid
-		userUpdates["musicFolders"] = fmt.Sprintf("\"%s\"", strings.Join(ids, ";"))
+		userUpdates["musicFolders"] = fmt.Sprintf("'%s'", strings.Join(ids, ";"))
 	}
 
-	maxBitRate := c.PostForm("maxBitRate")
+	maxBitRate := c.Query("maxBitRate")
 	if slices.Contains(subsonic.SubsonicValidBitRates, maxBitRate) {
 		userUpdates["maxBitRate"] = maxBitRate
 	}
@@ -291,7 +350,10 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		updates = append(updates, fmt.Sprintf("%s = %s", role, update))
 	}
 	updatesString := strings.Join(updates, ",")
-	updateUserQueryString := fmt.Sprintf("UPDATE Users SET %s WHERE username = %s;", updatesString, username)
+	updateUserQueryString := fmt.Sprintf("UPDATE Users SET %s WHERE username = '%s';", updatesString, username)
+	if gin.Mode() == gin.DebugMode {
+		log.Printf("Query String: %s", updateUserQueryString)
+	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
@@ -302,6 +364,9 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 	_, err = conn.Exec(ctx, updateUserQueryString) //create all tables
 	if err != nil {
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed updating user. Error: %s", err)
+		}
 		buildAndSendXMLError(c, "0")
 		return
 	}
@@ -320,9 +385,21 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 
 	ctx := context.Background()
 
+	userString, err := s.cache.Get(ctx, u).Result() //bug
+	if err != nil {                                 //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
+		}
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
 	var cachedUser subsonic.SubsonicRedisUser
-	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed unmarshalling user, Err: %s", err)
+		}
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -332,8 +409,11 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		return
 	}
 
-	username := c.PostForm("username")
+	username := c.Query("username")
 	if username == "" {
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed to get username from url-encoded post form parameters")
+		}
 		buildAndSendXMLError(c, "10")
 		return
 	}
@@ -370,7 +450,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 func (s *Server) handleChangePassword(c *gin.Context) {
 	u := c.MustGet("u").(string)
 
-	username := c.PostForm("username")
+	username := c.Query("username")
 	if username == "" {
 		buildAndSendXMLError(c, "10")
 		return
@@ -378,9 +458,21 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 
 	ctx := context.Background()
 
+	userString, err := s.cache.Get(ctx, u).Result() //bug
+	if err != nil {                                 //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
+		}
+		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		return
+	}
+
 	var cachedUser subsonic.SubsonicRedisUser
-	err := s.cache.Get(ctx, u).Scan(&cachedUser)
+	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Failed unmarshalling user, Err: %s", err)
+		}
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -390,7 +482,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 
-	password := c.PostForm("password")
+	password := c.Query("password")
 	if username == "" || password == "" {
 		buildAndSendXMLError(c, "10")
 		return

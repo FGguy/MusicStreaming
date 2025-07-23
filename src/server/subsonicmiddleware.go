@@ -30,6 +30,9 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 	params := []string{"u", "t", "s", "v", "c"}
 	for _, param := range params {
 		if c.Query(param) == "" {
+			if gin.Mode() == gin.DebugMode {
+				log.Printf("Missing required parameter.")
+			}
 			buildAndSendXMLError(c, "10")
 			return
 		} else {
@@ -95,6 +98,9 @@ func (s *Server) subWithAuth(c *gin.Context) {
 
 		user, err := query.GetUserByUsername(ctx, pgtype.Text{String: qUser, Valid: true})
 		if err != nil {
+			if gin.Mode() == gin.DebugMode {
+				log.Printf("User does not exist. Err: %s", err)
+			}
 			buildAndSendXMLError(c, "40") //user doesnt exist
 			return
 		}
@@ -122,6 +128,9 @@ func (s *Server) subWithAuth(c *gin.Context) {
 
 	//TODO: Change to support permissions
 	if !auth.ValidatePassword(qHashedPassword, qSalt, password) {
+		if gin.Mode() == gin.DebugMode {
+			log.Printf("Wrong password, Err: %s", err)
+		}
 		buildAndSendXMLError(c, "40") //password incorrect
 		return
 	}
