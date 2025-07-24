@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	consts "music-streaming/consts"
+	"music-streaming/scripts"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -45,7 +46,7 @@ func getServerDependencies(t *testing.T) (pg_pool *pgxpool.Pool, cache *redis.Cl
 	}
 	cache = redis.NewClient(opt)
 
-	SqlSetup(pg_pool, true)
+	scripts.SqlSetup(pg_pool)
 
 	return pg_pool, cache, nil
 }

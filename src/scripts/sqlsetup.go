@@ -1,4 +1,4 @@
-package server
+package scripts
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func SqlSetup(pg_pool *pgxpool.Pool, test bool) {
+func SqlSetup(pg_pool *pgxpool.Pool) {
 	ctx := context.Background()
 
 	//drop all tables if set to true

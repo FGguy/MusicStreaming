@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"music-streaming/scripts"
 	server "music-streaming/server"
 	"os"
 
@@ -33,7 +34,7 @@ func main() {
 	}
 	cache := redis.NewClient(opt)
 
-	server.SqlSetup(pg_pool, false)
+	scripts.SqlSetup(pg_pool)
 
 	//Blocks here
 	server.NewServer(pg_pool, cache).Run(fmt.Sprintf(":%d", PORT))
