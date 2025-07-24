@@ -5,8 +5,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	consts "music-streaming/consts"
 	sqlc "music-streaming/sql/sqlc"
-	subsonic "music-streaming/util/subsonic"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -67,7 +67,7 @@ func TestUserManagementHandlers(t *testing.T) {
 	testUser1HashedPasswordHex := hex.EncodeToString(testUser1HashedPassword[:])
 	testUser2HashedPassword := md5.Sum([]byte(testUser2.Password + salt))
 	testUser2HashedPasswordHex := hex.EncodeToString(testUser2HashedPassword[:])
-	version := subsonic.SubsonicVersion
+	version := consts.SubsonicVersion
 	expectedResponse := `<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1"></subsonic-response>`
 
 	t.Run("/rest/getUser route", func(t *testing.T) {

@@ -29,16 +29,8 @@ func SqlSetup(pg_pool *pgxpool.Pool, test bool) {
 	}
 	defer conn.Release()
 
-	//FIXME: find a better solution than wtv this is
-	var dropTables string
-	var tables string
-	if test {
-		dropTables = "../sql/droptables.sql"
-		tables = "../sql/tables.sql"
-	} else {
-		dropTables = "./sql/droptables.sql"
-		tables = "./sql/tables.sql"
-	}
+	dropTables := "./sql/droptables.sql"
+	tables := "./sql/tables.sql"
 
 	if cleanStart == "true" {
 		dropTablesScript, err := os.ReadFile(dropTables)

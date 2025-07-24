@@ -1,4 +1,4 @@
-package subsonic
+package consts
 
 const (
 	Xmlns                = "http://subsonic.org/restapi"

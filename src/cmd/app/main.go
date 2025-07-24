@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"context"
@@ -16,9 +16,8 @@ const (
 	PORT = 8080
 )
 
-func Execute() {
-	err := godotenv.Load()
-	if err != nil {
+func main() {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 

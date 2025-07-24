@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"music-streaming/util/subsonic"
+	consts "music-streaming/consts"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,7 +19,8 @@ import (
 )
 
 func getServerDependencies(t *testing.T) (pg_pool *pgxpool.Pool, cache *redis.Client, err error) {
-	err = godotenv.Load()
+	//wd is package
+	err = godotenv.Load("../.env")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,7 +105,7 @@ func TestSubsonicMiddleware(t *testing.T) {
 	baseURL := ts.URL + "/rest/ping"
 
 	t.Run("Should return an error for missing required parameter.", func(t *testing.T) {
-		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s", baseURL, adminName, hashedPasswordHex, salt, subsonic.SubsonicVersion)
+		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s", baseURL, adminName, hashedPasswordHex, salt, consts.SubsonicVersion)
 		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="10" message="Required parameter is missing."/></subsonic-response>`
 		assertGetRequest(t, req, 200, expected)
 	})
@@ -120,17 +121,17 @@ func TestSubsonicMiddleware(t *testing.T) {
 	})
 
 	t.Run("Should return a empty subsonic-response xml element.", func(t *testing.T) {
-		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s&c=Test", baseURL, adminName, hashedPasswordHex, salt, subsonic.SubsonicVersion)
+		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s&c=Test", baseURL, adminName, hashedPasswordHex, salt, consts.SubsonicVersion)
 		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1"></subsonic-response>`
 		assertGetRequest(t, req, 200, expected)
 	})
 
 	t.Run("Should return error for wrong username or password.", func(t *testing.T) {
-		req1 := fmt.Sprintf("%s?u=%s&t=WrongPassword&s=%s&v=%s&c=Test", baseURL, adminName, salt, subsonic.SubsonicVersion)
+		req1 := fmt.Sprintf("%s?u=%s&t=WrongPassword&s=%s&v=%s&c=Test", baseURL, adminName, salt, consts.SubsonicVersion)
 		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="40" message="Wrong username or password."/></subsonic-response>`
 		assertGetRequest(t, req1, 200, expected)
 
-		req2 := fmt.Sprintf("%s?u=NonExistingUser&t=%s&s=%s&v=%s&c=Test", baseURL, hashedPasswordHex, salt, subsonic.SubsonicVersion)
+		req2 := fmt.Sprintf("%s?u=NonExistingUser&t=%s&s=%s&v=%s&c=Test", baseURL, hashedPasswordHex, salt, consts.SubsonicVersion)
 		assertGetRequest(t, req2, 200, expected)
 	})
 }

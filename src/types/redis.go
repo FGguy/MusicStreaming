@@ -1,4 +1,4 @@
-package subsonic
+package types
 
 type SubsonicRedisUser struct {
 	Username            string   `redis:"username" json:"username"`

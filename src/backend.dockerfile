@@ -6,8 +6,8 @@ COPY . ./
 
 RUN go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-musicstreaming
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./docker-musicstreaming ./cmd/app
 
 EXPOSE 8080
 
-CMD [ "/docker-musicstreaming" ]
+CMD [ "./docker-musicstreaming" ]

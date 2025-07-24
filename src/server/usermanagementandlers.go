@@ -6,8 +6,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
+	consts "music-streaming/consts"
 	sqlc "music-streaming/sql/sqlc"
-	subsonic "music-streaming/util/subsonic"
+	types "music-streaming/types"
 	"net/http"
 	"slices"
 	"strconv"
@@ -38,7 +39,7 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser subsonic.SubsonicRedisUser
+	var cachedUser types.SubsonicRedisUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -67,10 +68,10 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicXmlResponse{
-		Xmlns:   subsonic.Xmlns,
+	subsonicRes := types.SubsonicXmlResponse{
+		Xmlns:   consts.Xmlns,
 		Status:  "ok",
-		Version: subsonic.SubsonicVersion,
+		Version: consts.SubsonicVersion,
 		User:    mapSqlUserToXmlUser(&user),
 	}
 
@@ -98,7 +99,7 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 		return
 	}
 
-	var cachedUser subsonic.SubsonicRedisUser
+	var cachedUser types.SubsonicRedisUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -127,15 +128,15 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 		return
 	}
 
-	xmlUsers := make([]*subsonic.SubsonicXmlUser, 0, len(users))
+	xmlUsers := make([]*types.SubsonicXmlUser, 0, len(users))
 	for _, user := range users {
 		xmlUsers = append(xmlUsers, mapSqlUserToXmlUser(&user))
 	}
 
-	subsonicRes := subsonic.SubsonicXmlResponse{
-		Xmlns:   subsonic.Xmlns,
+	subsonicRes := types.SubsonicXmlResponse{
+		Xmlns:   consts.Xmlns,
 		Status:  "ok",
-		Version: subsonic.SubsonicVersion,
+		Version: consts.SubsonicVersion,
 		Users:   xmlUsers,
 	}
 
@@ -162,7 +163,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser subsonic.SubsonicRedisUser
+	var cachedUser types.SubsonicRedisUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -185,10 +186,10 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicXmlResponse{
-		Xmlns:   subsonic.Xmlns,
+	subsonicRes := types.SubsonicXmlResponse{
+		Xmlns:   consts.Xmlns,
 		Status:  "ok",
-		Version: subsonic.SubsonicVersion,
+		Version: consts.SubsonicVersion,
 	}
 
 	userParams := make(map[string]string)
@@ -197,7 +198,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	userParams["password"] = fmt.Sprintf("'%s'", password)
 	userParams["email"] = fmt.Sprintf("'%s'", email)
 
-	for _, userRole := range subsonic.SubsonicUserRoles {
+	for _, userRole := range consts.SubsonicUserRoles {
 		enabled := c.Query(userRole)
 		if enabled == "true" || enabled == "false" {
 			userParams[userRole] = enabled
@@ -220,7 +221,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 
 	maxBitRate := c.Query("maxBitRate")
-	if slices.Contains(subsonic.SubsonicValidBitRates, maxBitRate) {
+	if slices.Contains(consts.SubsonicValidBitRates, maxBitRate) {
 		userParams["maxBitRate"] = maxBitRate
 	}
 
@@ -285,7 +286,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser subsonic.SubsonicRedisUser
+	var cachedUser types.SubsonicRedisUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -300,14 +301,14 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicXmlResponse{
-		Xmlns:   subsonic.Xmlns,
+	subsonicRes := types.SubsonicXmlResponse{
+		Xmlns:   consts.Xmlns,
 		Status:  "ok",
-		Version: subsonic.SubsonicVersion,
+		Version: consts.SubsonicVersion,
 	}
 
 	userUpdates := make(map[string]string)
-	for _, role := range subsonic.SubsonicUserRoles {
+	for _, role := range consts.SubsonicUserRoles {
 		roleUpdate := c.Query(role)
 		if roleUpdate == "true" || roleUpdate == "false" {
 			userUpdates[role] = roleUpdate
@@ -330,7 +331,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	}
 
 	maxBitRate := c.Query("maxBitRate")
-	if slices.Contains(subsonic.SubsonicValidBitRates, maxBitRate) {
+	if slices.Contains(consts.SubsonicValidBitRates, maxBitRate) {
 		userUpdates["maxBitRate"] = maxBitRate
 	}
 
@@ -394,7 +395,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser subsonic.SubsonicRedisUser
+	var cachedUser types.SubsonicRedisUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -432,10 +433,10 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicXmlResponse{
-		Xmlns:   subsonic.Xmlns,
+	subsonicRes := types.SubsonicXmlResponse{
+		Xmlns:   consts.Xmlns,
 		Status:  "ok",
-		Version: subsonic.SubsonicVersion,
+		Version: consts.SubsonicVersion,
 	}
 
 	xmlBody, err := xml.Marshal(subsonicRes)
@@ -467,7 +468,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 
-	var cachedUser subsonic.SubsonicRedisUser
+	var cachedUser types.SubsonicRedisUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -502,10 +503,10 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 
-	subsonicRes := subsonic.SubsonicXmlResponse{
-		Xmlns:   subsonic.Xmlns,
+	subsonicRes := types.SubsonicXmlResponse{
+		Xmlns:   consts.Xmlns,
 		Status:  "ok",
-		Version: subsonic.SubsonicVersion,
+		Version: consts.SubsonicVersion,
 	}
 
 	xmlBody, err := xml.Marshal(subsonicRes)
@@ -516,8 +517,8 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	c.Data(http.StatusOK, "application/xml", xmlBody)
 }
 
-func mapSqlUserToXmlUser(user *sqlc.User) *subsonic.SubsonicXmlUser {
-	return &subsonic.SubsonicXmlUser{
+func mapSqlUserToXmlUser(user *sqlc.User) *types.SubsonicXmlUser {
+	return &types.SubsonicXmlUser{
 		Username:            user.Username.String,
 		Email:               user.Email,
 		ScrobblingEnabled:   user.Scrobblingenabled,

@@ -1,4 +1,4 @@
-package subsonic
+package types
 
 import (
 	"encoding/xml"

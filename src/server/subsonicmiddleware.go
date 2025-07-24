@@ -12,8 +12,9 @@ import (
 
 	sqlc "music-streaming/sql/sqlc"
 
-	auth "music-streaming/util/auth"
-	subsonic "music-streaming/util/subsonic"
+	consts "music-streaming/consts"
+	types "music-streaming/types"
+	auth "music-streaming/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -59,15 +60,15 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 		return
 	}
 
-	if clientMajorVersion > subsonic.SubsonicMajorVersion {
+	if clientMajorVersion > consts.SubsonicMajorVersion {
 		buildAndSendXMLError(c, "30")
 		return
-	} else if clientMajorVersion < subsonic.SubsonicMajorVersion {
+	} else if clientMajorVersion < consts.SubsonicMajorVersion {
 		buildAndSendXMLError(c, "20")
 		return
 	}
 
-	if clientMinorVersion > subsonic.SubsonicMinorVersion {
+	if clientMinorVersion > consts.SubsonicMinorVersion {
 		buildAndSendXMLError(c, "30")
 		return
 	}
@@ -81,7 +82,7 @@ func (s *Server) subWithAuth(c *gin.Context) {
 	qSalt := c.MustGet("s").(string)
 
 	var password string
-	var cachedUser subsonic.SubsonicRedisUser
+	var cachedUser types.SubsonicRedisUser
 	ctx := context.Background()
 	err := s.cache.Get(ctx, qUser).Scan(&cachedUser)
 	if err != nil {
@@ -139,15 +140,15 @@ func (s *Server) subWithAuth(c *gin.Context) {
 // Util
 func buildAndSendXMLError(c *gin.Context, errorCode string) {
 	c.Abort()
-	subsonicRes := subsonic.SubsonicXmlResponse{
-		Xmlns:   subsonic.Xmlns,
+	subsonicRes := types.SubsonicXmlResponse{
+		Xmlns:   consts.Xmlns,
 		Status:  "failed",
-		Version: subsonic.SubsonicVersion,
+		Version: consts.SubsonicVersion,
 	}
 
-	subsonicRes.Error = &subsonic.SubsonicXmlError{
+	subsonicRes.Error = &types.SubsonicXmlError{
 		Code:    errorCode,
-		Message: subsonic.SubsonicErrorMessages[errorCode],
+		Message: consts.SubsonicErrorMessages[errorCode],
 	}
 
 	xmlBody, err := xml.Marshal(subsonicRes)
@@ -162,8 +163,8 @@ func buildAndSendXMLError(c *gin.Context, errorCode string) {
 	c.Data(http.StatusOK, "application/xml", []byte(temp))
 }
 
-func mapSqlUserToRedisUser(user *sqlc.User) *subsonic.SubsonicRedisUser {
-	return &subsonic.SubsonicRedisUser{
+func mapSqlUserToRedisUser(user *sqlc.User) *types.SubsonicRedisUser {
+	return &types.SubsonicRedisUser{
 		Username:            user.Username.String,
 		Email:               user.Email,
 		Password:            user.Password,

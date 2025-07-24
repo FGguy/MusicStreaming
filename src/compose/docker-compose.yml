@@ -29,7 +29,7 @@ services:
 
   music-streaming-server:
     build:
-      context: ./src
+      context: ../.
       dockerfile: ./backend.dockerfile
     restart: always
     depends_on:
