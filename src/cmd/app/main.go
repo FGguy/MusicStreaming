@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"music-streaming/scripts"
 	server "music-streaming/server"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
@@ -36,6 +40,22 @@ func main() {
 
 	scripts.SqlSetup(pg_pool)
 
-	//Blocks here
-	server.NewServer(pg_pool, cache).Run(fmt.Sprintf(":%d", PORT))
+	serverError := make(chan error, 1)
+	go func() {
+		if err := server.NewServer(pg_pool, cache).Router.Run(fmt.Sprintf(":%d", PORT)); !errors.Is(err, http.ErrServerClosed) {
+			serverError <- err
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-serverError:
+		log.Printf("Server error: %v", err)
+	case sig := <-stop:
+		log.Printf("Received shutdown signal: %v", sig)
+	}
+
+	//TODO: add graceful shutdown
 }

@@ -92,7 +92,7 @@ func TestSubsonicMiddleware(t *testing.T) {
 	defer pg_pool.Close()
 
 	server := NewServer(pg_pool, cache)
-	ts := httptest.NewServer(server.router)
+	ts := httptest.NewServer(server.Router)
 	defer ts.Close()
 
 	adminName, adminNameDefined := os.LookupEnv("ADMIN_NAME")
