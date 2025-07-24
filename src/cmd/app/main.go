@@ -38,7 +38,9 @@ func main() {
 	}
 	cache := redis.NewClient(opt)
 
-	scripts.SqlSetup(pg_pool)
+	if err = scripts.SqlSetup(pg_pool); err != nil {
+		log.Fatalf("Failed running sql setup script. Error: %s", err)
+	}
 
 	serverError := make(chan error, 1)
 	go func() {

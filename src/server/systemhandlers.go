@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) handlePing(c *gin.Context) {
-	subsonicRes := types.SubsonicXmlResponse{
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,

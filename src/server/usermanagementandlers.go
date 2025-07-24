@@ -24,7 +24,7 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 	username := c.Query("username")
 	if username == "" {
-		buildAndSendXMLError(c, "10")
+		buildAndSendError(c, "10")
 		return
 	}
 
@@ -39,7 +39,7 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser types.SubsonicRedisUser
+	var cachedUser types.SubsonicUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -50,13 +50,13 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 	}
 
 	if !cachedUser.AdminRole && u != username {
-		buildAndSendXMLError(c, "50")
+		buildAndSendError(c, "50")
 		return
 	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 	defer conn.Release()
@@ -64,15 +64,15 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 	user, err := q.GetUserByUsername(ctx, pgtype.Text{String: username, Valid: true})
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 
-	subsonicRes := types.SubsonicXmlResponse{
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
-		User:    mapSqlUserToXmlUser(&user),
+		User:    types.MapSqlUserToSubsonicUser(&user, ""),
 	}
 
 	//build xml body for answer
@@ -99,7 +99,7 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 		return
 	}
 
-	var cachedUser types.SubsonicRedisUser
+	var cachedUser types.SubsonicUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -110,13 +110,13 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 	}
 
 	if !cachedUser.AdminRole {
-		buildAndSendXMLError(c, "50")
+		buildAndSendError(c, "50")
 		return
 	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 	defer conn.Release()
@@ -124,16 +124,16 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 
 	users, err := q.GetUsers(ctx)
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 
-	xmlUsers := make([]*types.SubsonicXmlUser, 0, len(users))
+	xmlUsers := make([]*types.SubsonicUser, 0, len(users))
 	for _, user := range users {
-		xmlUsers = append(xmlUsers, mapSqlUserToXmlUser(&user))
+		xmlUsers = append(xmlUsers, types.MapSqlUserToSubsonicUser(&user, ""))
 	}
 
-	subsonicRes := types.SubsonicXmlResponse{
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
@@ -163,7 +163,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser types.SubsonicRedisUser
+	var cachedUser types.SubsonicUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -174,7 +174,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 
 	if !cachedUser.AdminRole {
-		buildAndSendXMLError(c, "50")
+		buildAndSendError(c, "50")
 		return
 	}
 
@@ -182,11 +182,11 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	password := c.Query("password")
 	email := c.Query("email")
 	if username == "" || password == "" || email == "" {
-		buildAndSendXMLError(c, "10")
+		buildAndSendError(c, "10")
 		return
 	}
 
-	subsonicRes := types.SubsonicXmlResponse{
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
@@ -211,7 +211,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		for _, folderId := range musicFolders {
 			id, err := strconv.Atoi(folderId)
 			if err != nil || id < 1 { //invalid folder id passed as param
-				buildAndSendXMLError(c, "0")
+				buildAndSendError(c, "0")
 				return
 			}
 			ids = append(ids, folderId)
@@ -240,7 +240,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 	defer conn.Release()
@@ -250,7 +250,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed creating user Err: %s", err)
 		}
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 
@@ -271,7 +271,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed getting user from params")
 		}
-		buildAndSendXMLError(c, "10")
+		buildAndSendError(c, "10")
 		return
 	}
 
@@ -286,7 +286,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser types.SubsonicRedisUser
+	var cachedUser types.SubsonicUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -297,11 +297,11 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	}
 
 	if !cachedUser.AdminRole && (cachedUser.Username != username || !cachedUser.SettingsRole) {
-		buildAndSendXMLError(c, "50")
+		buildAndSendError(c, "50")
 		return
 	}
 
-	subsonicRes := types.SubsonicXmlResponse{
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
@@ -321,7 +321,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		for _, folderId := range musicFolders {
 			id, err := strconv.Atoi(folderId)
 			if err != nil || id < 1 { //invalid folder id passed as param
-				buildAndSendXMLError(c, "0")
+				buildAndSendError(c, "0")
 				return
 			}
 			ids = append(ids, folderId)
@@ -358,7 +358,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 	defer conn.Release()
@@ -368,7 +368,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed updating user. Error: %s", err)
 		}
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 
@@ -395,7 +395,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		return
 	}
 
-	var cachedUser types.SubsonicRedisUser
+	var cachedUser types.SubsonicUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -406,7 +406,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 	}
 
 	if !cachedUser.AdminRole {
-		buildAndSendXMLError(c, "50")
+		buildAndSendError(c, "50")
 		return
 	}
 
@@ -415,13 +415,13 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed to get username from url-encoded post form parameters")
 		}
-		buildAndSendXMLError(c, "10")
+		buildAndSendError(c, "10")
 		return
 	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 	defer conn.Release()
@@ -429,11 +429,11 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 
 	_, err = q.DeleteUser(ctx, pgtype.Text{String: username, Valid: true})
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 
-	subsonicRes := types.SubsonicXmlResponse{
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
@@ -453,7 +453,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 
 	username := c.Query("username")
 	if username == "" {
-		buildAndSendXMLError(c, "10")
+		buildAndSendError(c, "10")
 		return
 	}
 
@@ -468,7 +468,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 
-	var cachedUser types.SubsonicRedisUser
+	var cachedUser types.SubsonicUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
@@ -479,19 +479,19 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	}
 
 	if !cachedUser.AdminRole && (cachedUser.Username != username) {
-		buildAndSendXMLError(c, "50")
+		buildAndSendError(c, "50")
 		return
 	}
 
 	password := c.Query("password")
 	if username == "" || password == "" {
-		buildAndSendXMLError(c, "10")
+		buildAndSendError(c, "10")
 		return
 	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 	defer conn.Release()
@@ -499,11 +499,11 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 
 	_, err = q.ChangeUserPassword(ctx, sqlc.ChangeUserPasswordParams{Username: pgtype.Text{String: username, Valid: true}, Password: password})
 	if err != nil {
-		buildAndSendXMLError(c, "0")
+		buildAndSendError(c, "0")
 		return
 	}
 
-	subsonicRes := types.SubsonicXmlResponse{
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
@@ -515,27 +515,4 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 	c.Data(http.StatusOK, "application/xml", xmlBody)
-}
-
-func mapSqlUserToXmlUser(user *sqlc.User) *types.SubsonicXmlUser {
-	return &types.SubsonicXmlUser{
-		Username:            user.Username.String,
-		Email:               user.Email,
-		ScrobblingEnabled:   user.Scrobblingenabled,
-		LdapAuthenticated:   user.Ldapauthenticated,
-		AdminRole:           user.Adminrole,
-		SettingsRole:        user.Settingsrole,
-		StreamRole:          user.Streamrole,
-		JukeboxRole:         user.Jukeboxrole,
-		DownloadRole:        user.Downloadrole,
-		UploadRole:          user.Uploadrole,
-		PlaylistRole:        user.Playlistrole,
-		CoverArtRole:        user.Coverartrole,
-		CommentRole:         user.Commentrole,
-		PodcastRole:         user.Podcastrole,
-		ShareRole:           user.Sharerole,
-		VideoConversionRole: user.Videoconversionrole,
-		MusicfolderId:       strings.Split(user.Musicfolderid.String, ";"),
-		MaxBitRate:          user.Maxbitrate,
-	}
 }

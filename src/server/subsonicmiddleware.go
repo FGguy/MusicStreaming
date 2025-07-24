@@ -20,78 +20,69 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
-	/*
-		Do not care about 'p' or 'f' query params
-		password needs to be hashed
-		only supported format will be xml
-	*/
+type requiredParams struct {
+	u string `form:"u" binding:"required"`
+	t string `form:"t" binding:"required"`
+	s string `form:"s" binding:"required"`
+	v string `form:"v" binding:"required"`
+	c string `form:"c" binding:"required"`
+	f string `form:"f"`
+	p string `form:"p"`
+}
 
-	//FIXME: use custom struct to bind with parameters
-	params := []string{"u", "t", "s", "v", "c"}
-	for _, param := range params {
-		if c.Query(param) == "" {
-			if gin.Mode() == gin.DebugMode {
-				log.Printf("Missing required parameter.")
-			}
-			buildAndSendXMLError(c, "10")
-			return
-		} else {
-			c.Set(param, c.Query(param))
-		}
+func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
+	var params requiredParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		buildAndSendError(c, "10")
+		return
 	}
+	c.Set("requiredParams", params)
 
 	//validate Subsonic API compatibility with client
-	clientVersion := strings.Split(c.Query("v"), ".")
+	clientVersion := strings.Split(params.v, ".")
 	clientMajorVersion, err := strconv.Atoi(clientVersion[0])
 	if err != nil {
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed converting subsonic client major version into int, Err: %s", err)
-		}
-		buildAndSendXMLError(c, "0")
+		debugLogError("Failed converting subsonic client major version into int", err)
+		buildAndSendError(c, "0")
 		return
 	}
 	clientMinorVersion, err := strconv.Atoi(clientVersion[1])
 	if err != nil {
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed converting subsonic client minor version into int, Err: %s", err)
-		}
-		buildAndSendXMLError(c, "0")
+		debugLogError("Failed converting subsonic client minor version into int", err)
+		buildAndSendError(c, "0")
 		return
 	}
 
 	if clientMajorVersion > consts.SubsonicMajorVersion {
-		buildAndSendXMLError(c, "30")
+		buildAndSendError(c, "30")
 		return
 	} else if clientMajorVersion < consts.SubsonicMajorVersion {
-		buildAndSendXMLError(c, "20")
+		buildAndSendError(c, "20")
 		return
 	}
 
 	if clientMinorVersion > consts.SubsonicMinorVersion {
-		buildAndSendXMLError(c, "30")
+		buildAndSendError(c, "30")
 		return
 	}
 }
 
 func (s *Server) subWithAuth(c *gin.Context) {
+	var (
+		requiredParams  = c.MustGet("requiredParams").(requiredParams)
+		qUser           = requiredParams.u
+		qHashedPassword = requiredParams.t
+		qSalt           = requiredParams.s
+		password        string
+		cachedUser      types.SubsonicUser
+		ctx             = context.Background()
+	)
 
-	//Shouldn't panic, if it does its kinda cooked
-	qUser := c.MustGet("u").(string)
-	qHashedPassword := c.MustGet("t").(string)
-	qSalt := c.MustGet("s").(string)
-
-	var password string
-	var cachedUser types.SubsonicRedisUser
-	ctx := context.Background()
-	err := s.cache.Get(ctx, qUser).Scan(&cachedUser)
-	if err != nil {
+	if err := s.cache.Get(ctx, qUser).Scan(&cachedUser); err != nil {
 		conn, err := s.pg_pool.Acquire(ctx)
 		if err != nil {
-			if gin.Mode() == gin.DebugMode {
-				log.Printf("Failed acquiring connection from postgres connection pool, Err: %s", err)
-			}
-			buildAndSendXMLError(c, "0")
+			debugLogError("Failed acquiring connection from postgres connection pool", err)
+			buildAndSendError(c, "0")
 			return
 		}
 		defer conn.Release()
@@ -99,27 +90,20 @@ func (s *Server) subWithAuth(c *gin.Context) {
 
 		user, err := query.GetUserByUsername(ctx, pgtype.Text{String: qUser, Valid: true})
 		if err != nil {
-			if gin.Mode() == gin.DebugMode {
-				log.Printf("User does not exist. Err: %s", err)
-			}
-			buildAndSendXMLError(c, "40") //user doesnt exist
+			debugLogError("User does not exist", err)
+			buildAndSendError(c, "40")
 			return
 		}
 
-		encodedUser, err := json.Marshal(mapSqlUserToRedisUser(&user))
+		encodedUser, err := json.Marshal(types.MapSqlUserToSubsonicUser(&user, user.Password))
 		if err != nil {
-			if gin.Mode() == gin.DebugMode {
-				log.Printf("Failed encoding user credentials, Err: %s", err)
-			}
-			buildAndSendXMLError(c, "0")
+			debugLogError("Failed encoding user credentials", err)
+			buildAndSendError(c, "0")
 			return
 		}
-		err = s.cache.Set(ctx, user.Username.String, encodedUser, time.Minute*10).Err()
-		if err != nil {
-			if gin.Mode() == gin.DebugMode {
-				log.Printf("Failed creating cache entry for user credentials, Err: %s", err)
-			}
-			buildAndSendXMLError(c, "0")
+		if err = s.cache.Set(ctx, user.Username.String, encodedUser, time.Minute*10).Err(); err != nil {
+			debugLogError("Failed creating cache entry for user credentials", err)
+			buildAndSendError(c, "0")
 			return
 		}
 		password = user.Password
@@ -127,26 +111,24 @@ func (s *Server) subWithAuth(c *gin.Context) {
 		password = cachedUser.Password
 	}
 
-	//TODO: Change to support permissions
 	if !auth.ValidatePassword(qHashedPassword, qSalt, password) {
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Wrong password, Err: %s", err)
-		}
-		buildAndSendXMLError(c, "40") //password incorrect
+		debugLog("Wrong Password.")
+		buildAndSendError(c, "40")
 		return
 	}
 }
 
 // Util
-func buildAndSendXMLError(c *gin.Context, errorCode string) {
+func buildAndSendError(c *gin.Context, errorCode string) {
 	c.Abort()
-	subsonicRes := types.SubsonicXmlResponse{
+
+	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "failed",
 		Version: consts.SubsonicVersion,
 	}
 
-	subsonicRes.Error = &types.SubsonicXmlError{
+	subsonicRes.Error = &types.SubsonicError{
 		Code:    errorCode,
 		Message: consts.SubsonicErrorMessages[errorCode],
 	}
@@ -163,26 +145,14 @@ func buildAndSendXMLError(c *gin.Context, errorCode string) {
 	c.Data(http.StatusOK, "application/xml", []byte(temp))
 }
 
-func mapSqlUserToRedisUser(user *sqlc.User) *types.SubsonicRedisUser {
-	return &types.SubsonicRedisUser{
-		Username:            user.Username.String,
-		Email:               user.Email,
-		Password:            user.Password,
-		ScrobblingEnabled:   user.Scrobblingenabled,
-		LdapAuthenticated:   user.Ldapauthenticated,
-		AdminRole:           user.Adminrole,
-		SettingsRole:        user.Settingsrole,
-		StreamRole:          user.Streamrole,
-		JukeboxRole:         user.Jukeboxrole,
-		DownloadRole:        user.Downloadrole,
-		UploadRole:          user.Uploadrole,
-		PlaylistRole:        user.Playlistrole,
-		CoverArtRole:        user.Coverartrole,
-		CommentRole:         user.Commentrole,
-		PodcastRole:         user.Podcastrole,
-		ShareRole:           user.Sharerole,
-		VideoConversionRole: user.Videoconversionrole,
-		MusicfolderId:       strings.Split(user.Musicfolderid.String, ";"),
-		MaxBitRate:          user.Maxbitrate,
+func debugLog(message string) {
+	if gin.Mode() == gin.DebugMode {
+		log.Printf(message)
+	}
+}
+
+func debugLogError(message string, err error) {
+	if gin.Mode() == gin.DebugMode {
+		log.Printf("%s. Error: %s", message, err)
 	}
 }
