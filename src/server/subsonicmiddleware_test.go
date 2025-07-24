@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	consts "music-streaming/consts"
 	"music-streaming/scripts"
 	"net/http"
@@ -46,7 +47,9 @@ func getServerDependencies(t *testing.T) (pg_pool *pgxpool.Pool, cache *redis.Cl
 	}
 	cache = redis.NewClient(opt)
 
-	scripts.SqlSetup(pg_pool)
+	if err = scripts.SqlSetup(pg_pool); err != nil {
+		log.Fatalf("Failed running sql setup script. Error: %s", err)
+	}
 
 	return pg_pool, cache, nil
 }
