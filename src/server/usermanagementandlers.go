@@ -20,8 +20,7 @@ import (
 
 // GET
 func (s *Server) hangleGetUser(c *gin.Context) {
-	u := c.MustGet("u").(string)
-
+	params := c.MustGet("requiredParams").(requiredParams)
 	username := c.Query("username")
 	if username == "" {
 		buildAndSendError(c, "10")
@@ -30,8 +29,8 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 	ctx := context.Background()
 
-	userString, err := s.cache.Get(ctx, u).Result() //bug
-	if err != nil {                                 //if user is authenticated their info should be cached
+	userString, err := s.cache.Get(ctx, params.U).Result() //bug
+	if err != nil {                                        //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
 		}
@@ -49,7 +48,7 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 		return
 	}
 
-	if !cachedUser.AdminRole && u != username {
+	if !cachedUser.AdminRole && params.U != username {
 		buildAndSendError(c, "50")
 		return
 	}
@@ -86,12 +85,11 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 // GET
 func (s *Server) hangleGetUsers(c *gin.Context) {
-	u := c.MustGet("u").(string)
-
+	params := c.MustGet("requiredParams").(requiredParams)
 	ctx := context.Background()
 
-	userString, err := s.cache.Get(ctx, u).Result() //bug
-	if err != nil {                                 //if user is authenticated their info should be cached
+	userString, err := s.cache.Get(ctx, params.U).Result() //bug
+	if err != nil {                                        //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
 		}
@@ -150,12 +148,11 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 
 // POST
 func (s *Server) handleCreateUser(c *gin.Context) {
-	u := c.MustGet("u").(string)
-
+	params := c.MustGet("requiredParams").(requiredParams)
 	ctx := context.Background()
 
-	userString, err := s.cache.Get(ctx, u).Result() //bug
-	if err != nil {                                 //if user is authenticated their info should be cached
+	userString, err := s.cache.Get(ctx, params.U).Result() //bug
+	if err != nil {                                        //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
 		}
@@ -225,13 +222,13 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		userParams["maxBitRate"] = maxBitRate
 	}
 
-	params := make([]string, 0, len(userParams))
+	qParams := make([]string, 0, len(userParams))
 	values := make([]string, 0, len(userParams))
 	for param, value := range userParams {
-		params = append(params, param)
+		qParams = append(qParams, param)
 		values = append(values, value)
 	}
-	paramsString := strings.Join(params, ", ")
+	paramsString := strings.Join(qParams, ", ")
 	valuesString := strings.Join(values, ", ")
 	createUserQueryString := fmt.Sprintf("INSERT INTO Users (%s) VALUES (%s) ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username RETURNING *;", paramsString, valuesString)
 	if gin.Mode() == gin.DebugMode {
@@ -264,7 +261,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 
 // POST
 func (s *Server) handleUpdateUser(c *gin.Context) {
-	u := c.MustGet("u").(string)
+	params := c.MustGet("requiredParams").(requiredParams)
 
 	username := c.Query("username")
 	if username == "" {
@@ -277,8 +274,8 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 	ctx := context.Background()
 
-	userString, err := s.cache.Get(ctx, u).Result() //bug
-	if err != nil {                                 //if user is authenticated their info should be cached
+	userString, err := s.cache.Get(ctx, params.U).Result() //bug
+	if err != nil {                                        //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
 		}
@@ -382,12 +379,12 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 // POST
 func (s *Server) handleDeleteUser(c *gin.Context) {
-	u := c.MustGet("u").(string)
+	params := c.MustGet("requiredParams").(requiredParams)
 
 	ctx := context.Background()
 
-	userString, err := s.cache.Get(ctx, u).Result() //bug
-	if err != nil {                                 //if user is authenticated their info should be cached
+	userString, err := s.cache.Get(ctx, params.U).Result() //bug
+	if err != nil {                                        //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
 		}
@@ -449,7 +446,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 
 // POST
 func (s *Server) handleChangePassword(c *gin.Context) {
-	u := c.MustGet("u").(string)
+	params := c.MustGet("requiredParams").(requiredParams)
 
 	username := c.Query("username")
 	if username == "" {
@@ -459,8 +456,8 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 
 	ctx := context.Background()
 
-	userString, err := s.cache.Get(ctx, u).Result() //bug
-	if err != nil {                                 //if user is authenticated their info should be cached
+	userString, err := s.cache.Get(ctx, params.U).Result() //bug
+	if err != nil {                                        //if user is authenticated their info should be cached
 		if gin.Mode() == gin.DebugMode {
 			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
 		}

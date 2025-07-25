@@ -9,11 +9,11 @@ run: build
 .PHONY: run
 
 integration:
-	cd ./project && docker-compose up -d redis postgres && \
+	cd ./compose && docker-compose up -d redis postgres && \
 	cd .. && \
 	go test ./... ; \
 	EXIT_CODE=$$? ; \
-	cd ./project && docker-compose down ; \
+	cd ./compose && docker-compose down ; \
 	exit $$EXIT_CODE
 
 .PHONY: integration

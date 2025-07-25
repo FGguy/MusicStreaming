@@ -21,13 +21,13 @@ import (
 )
 
 type requiredParams struct {
-	u string `form:"u" binding:"required"`
-	t string `form:"t" binding:"required"`
-	s string `form:"s" binding:"required"`
-	v string `form:"v" binding:"required"`
-	c string `form:"c" binding:"required"`
-	f string `form:"f"`
-	p string `form:"p"`
+	U string `form:"u" binding:"required"`
+	T string `form:"t" binding:"required"`
+	S string `form:"s" binding:"required"`
+	V string `form:"v" binding:"required"`
+	C string `form:"c" binding:"required"`
+	F string `form:"f"`
+	P string `form:"p"`
 }
 
 func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
@@ -39,7 +39,7 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 	c.Set("requiredParams", params)
 
 	//validate Subsonic API compatibility with client
-	clientVersion := strings.Split(params.v, ".")
+	clientVersion := strings.Split(params.V, ".")
 	clientMajorVersion, err := strconv.Atoi(clientVersion[0])
 	if err != nil {
 		debugLogError("Failed converting subsonic client major version into int", err)
@@ -70,9 +70,9 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 func (s *Server) subWithAuth(c *gin.Context) {
 	var (
 		requiredParams  = c.MustGet("requiredParams").(requiredParams)
-		qUser           = requiredParams.u
-		qHashedPassword = requiredParams.t
-		qSalt           = requiredParams.s
+		qUser           = requiredParams.U
+		qHashedPassword = requiredParams.T
+		qSalt           = requiredParams.S
 		password        string
 		cachedUser      types.SubsonicUser
 		ctx             = context.Background()

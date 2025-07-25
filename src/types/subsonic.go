@@ -26,7 +26,7 @@ type SubsonicUser struct {
 	XMLName             xml.Name `xml:"user" json:"-"`
 	Username            string   `xml:"username,attr" json:"username"`
 	Email               string   `xml:"email,attr" json:"email"`
-	Password            string   `json:"password,omitempty"`
+	Password            string   `xml:"-" json:"password,omitempty"`
 	ScrobblingEnabled   bool     `xml:"scrobblingEnabled,attr" json:"scrobblingEnabled"`
 	LdapAuthenticated   bool     `xml:"ldapAuthenticated,attr" json:"ldapAuthenticated"`
 	AdminRole           bool     `xml:"adminRole,attr" json:"adminRole"`
