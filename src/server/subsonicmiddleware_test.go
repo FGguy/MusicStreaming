@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -70,8 +71,8 @@ func assertGetRequest(t *testing.T, req string, expectedStatus int, expectedBody
 	assert.Equal(t, expectedBody, string(bodyBytes))
 }
 
-func assertPostRequest(t *testing.T, req string, expectedStatus int, expectedBody string) {
-	resp, err := http.Post(req, "application/x-www-form-urlencoded", nil)
+func assertPostRequest(t *testing.T, req string, formBody string, expectedStatus int, expectedBody string) {
+	resp, err := http.Post(req, "application/x-www-form-urlencoded", strings.NewReader(formBody))
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}

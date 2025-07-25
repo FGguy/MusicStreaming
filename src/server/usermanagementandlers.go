@@ -159,9 +159,9 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 
 	userParams := make(map[string]any)
-	userParams["username"] = c.Query("username")
-	userParams["password"] = c.Query("password")
-	userParams["email"] = c.Query("email")
+	userParams["username"] = c.PostForm("username")
+	userParams["password"] = c.PostForm("password")
+	userParams["email"] = c.PostForm("email")
 
 	if userParams["username"] == "" || userParams["password"] == "" || userParams["email"] == "" {
 		buildAndSendError(c, "10")
@@ -169,13 +169,13 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 
 	for _, userRole := range consts.SubsonicUserRoles {
-		enabled := c.Query(userRole)
+		enabled := c.PostForm(userRole)
 		if enabled == "true" || enabled == "false" {
 			userParams[strings.ToLower(userRole)] = enabled
 		}
 	}
 
-	musicFolders := c.QueryArray("musicFolderId")
+	musicFolders := c.PostFormArray("musicFolderId")
 	if len(musicFolders) > 0 {
 		ids := make([]string, 0, len(musicFolders))
 		for _, folderId := range musicFolders {
@@ -190,7 +190,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		userParams["musicfolders"] = fmt.Sprintf("\"%s\"", strings.Join(ids, ";"))
 	}
 
-	maxBitRate := c.Query("maxbitrate")
+	maxBitRate := c.PostForm("maxbitrate")
 	if slices.Contains(consts.SubsonicValidBitRates, maxBitRate) {
 		userParams["maxbitrate"] = maxBitRate
 	}
@@ -223,7 +223,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 func (s *Server) handleUpdateUser(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
 	contentType := c.MustGet("contentType").(string)
-	username := c.Query("username")
+	username := c.PostForm("username")
 	if username == "" {
 		debugLog("Failed getting user from params")
 		buildAndSendError(c, "10")
@@ -246,7 +246,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		return
 	}
 
-	if !cachedUser.AdminRole && (cachedUser.Username != username || !cachedUser.SettingsRole) {
+	if !cachedUser.AdminRole && !(cachedUser.Username == username && cachedUser.SettingsRole) {
 		buildAndSendError(c, "50")
 		return
 	}
@@ -259,13 +259,13 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 	userUpdates := make(map[string]string)
 	for _, role := range consts.SubsonicUserRoles {
-		roleUpdate := c.Query(role)
+		roleUpdate := c.PostForm(role)
 		if roleUpdate == "true" || roleUpdate == "false" {
 			userUpdates[strings.ToLower(role)] = roleUpdate
 		}
 	}
 	//check for update to musicFolderID
-	musicFolders := c.QueryArray("musicFolderId")
+	musicFolders := c.PostFormArray("musicFolderId")
 	if len(musicFolders) > 0 {
 		ids := make([]string, 0, len(musicFolders))
 		for _, folderId := range musicFolders {
@@ -280,7 +280,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		userUpdates["musicfolders"] = fmt.Sprintf("'%s'", strings.Join(ids, ";"))
 	}
 
-	maxBitRate := c.Query("maxBitRate")
+	maxBitRate := c.PostForm("maxBitRate")
 	if slices.Contains(consts.SubsonicValidBitRates, maxBitRate) {
 		userUpdates["maxbitrate"] = maxBitRate
 	}
@@ -343,7 +343,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		return
 	}
 
-	username := c.Query("username")
+	username := c.PostForm("username")
 	if username == "" {
 		debugLog("Failed to get username from url-encoded post form parameters")
 		buildAndSendError(c, "10")
@@ -377,7 +377,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	contentType := c.MustGet("contentType").(string)
 	params := c.MustGet("requiredParams").(requiredParams)
 
-	username := c.Query("username")
+	username := c.PostForm("username")
 	if username == "" {
 		buildAndSendError(c, "10")
 		return
@@ -404,7 +404,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 
-	password := c.Query("password")
+	password := c.PostForm("password")
 	if username == "" || password == "" {
 		buildAndSendError(c, "10")
 		return
