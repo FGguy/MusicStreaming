@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"log"
 	consts "music-streaming/consts"
 	sqlc "music-streaming/sql/sqlc"
 	types "music-streaming/types"
@@ -31,19 +30,14 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
-		}
+		debugLogError("Failed fetching user credentials from cache", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
-	err = json.Unmarshal([]byte(userString), &cachedUser)
-	if err != nil { //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed unmarshalling user, Err: %s", err)
-		}
+	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
+		debugLogError("Failed unmarshalling user", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -90,19 +84,14 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
-		}
+		debugLogError("Failed fetching user credentials from cache", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
-	err = json.Unmarshal([]byte(userString), &cachedUser)
-	if err != nil { //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed unmarshalling user, Err: %s", err)
-		}
+	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
+		debugLogError("Failed unmarshalling user", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -153,9 +142,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
-		}
+		debugLogError("Failed fetching user credentials from cache", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -163,9 +150,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	var cachedUser types.SubsonicUser
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed unmarshalling user, Err: %s", err)
-		}
+		debugLogError("Failed unmarshalling user", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -175,9 +160,11 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	username := c.Query("username")
-	password := c.Query("password")
-	email := c.Query("email")
+	var (
+		username = c.Query("username")
+		password = c.Query("password")
+		email    = c.Query("email")
+	)
 	if username == "" || password == "" || email == "" {
 		buildAndSendError(c, "10")
 		return
@@ -190,7 +177,6 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 
 	userParams := make(map[string]string)
-
 	userParams["username"] = fmt.Sprintf("'%s'", username)
 	userParams["password"] = fmt.Sprintf("'%s'", password)
 	userParams["email"] = fmt.Sprintf("'%s'", email)
@@ -231,9 +217,6 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	paramsString := strings.Join(qParams, ", ")
 	valuesString := strings.Join(values, ", ")
 	createUserQueryString := fmt.Sprintf("INSERT INTO Users (%s) VALUES (%s) ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username RETURNING *;", paramsString, valuesString)
-	if gin.Mode() == gin.DebugMode {
-		log.Printf("Query String: %s", createUserQueryString)
-	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
@@ -242,11 +225,8 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 	defer conn.Release()
 
-	_, err = conn.Exec(ctx, createUserQueryString) //create all tables
-	if err != nil {
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed creating user Err: %s", err)
-		}
+	if _, err = conn.Exec(ctx, createUserQueryString); err != nil {
+		debugLogError("Failed creating user", err)
 		buildAndSendError(c, "0")
 		return
 	}
@@ -262,12 +242,9 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 // POST
 func (s *Server) handleUpdateUser(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
-
 	username := c.Query("username")
 	if username == "" {
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed getting user from params")
-		}
+		debugLog("Failed getting user from params")
 		buildAndSendError(c, "10")
 		return
 	}
@@ -276,19 +253,14 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
-		}
+		debugLogError("Failed fetching user credentials from cache", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
-	err = json.Unmarshal([]byte(userString), &cachedUser)
-	if err != nil { //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed unmarshalling user, Err: %s", err)
-		}
+	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
+		debugLogError("Failed unmarshalling user", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -349,9 +321,6 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	}
 	updatesString := strings.Join(updates, ",")
 	updateUserQueryString := fmt.Sprintf("UPDATE Users SET %s WHERE username = '%s';", updatesString, username)
-	if gin.Mode() == gin.DebugMode {
-		log.Printf("Query String: %s", updateUserQueryString)
-	}
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
@@ -360,11 +329,8 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	}
 	defer conn.Release()
 
-	_, err = conn.Exec(ctx, updateUserQueryString) //create all tables
-	if err != nil {
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed updating user. Error: %s", err)
-		}
+	if _, err = conn.Exec(ctx, updateUserQueryString); err != nil {
+		debugLogError("Failed updating user", err)
 		buildAndSendError(c, "0")
 		return
 	}
@@ -380,24 +346,18 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 // POST
 func (s *Server) handleDeleteUser(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
-
 	ctx := context.Background()
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
-		}
+		debugLogError("Failed fetching user credentials from cache", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
-	err = json.Unmarshal([]byte(userString), &cachedUser)
-	if err != nil { //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed unmarshalling user, Err: %s", err)
-		}
+	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
+		debugLogError("Failed unmarshalling user", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -409,9 +369,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 
 	username := c.Query("username")
 	if username == "" {
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed to get username from url-encoded post form parameters")
-		}
+		debugLog("Failed to get username from url-encoded post form parameters")
 		buildAndSendError(c, "10")
 		return
 	}
@@ -424,8 +382,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 	defer conn.Release()
 	q := sqlc.New(conn)
 
-	_, err = q.DeleteUser(ctx, pgtype.Text{String: username, Valid: true})
-	if err != nil {
+	if _, err = q.DeleteUser(ctx, pgtype.Text{String: username, Valid: true}); err != nil {
 		buildAndSendError(c, "0")
 		return
 	}
@@ -458,19 +415,14 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed fetching user credentials from cache, Err: %s", err)
-		}
+		debugLogError("Failed fetching user credentials from cache", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
-	err = json.Unmarshal([]byte(userString), &cachedUser)
-	if err != nil { //if user is authenticated their info should be cached
-		if gin.Mode() == gin.DebugMode {
-			log.Printf("Failed unmarshalling user, Err: %s", err)
-		}
+	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
+		debugLogError("Failed unmarshalling user", err)
 		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
 		return
 	}
@@ -494,8 +446,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	defer conn.Release()
 	q := sqlc.New(conn)
 
-	_, err = q.ChangeUserPassword(ctx, sqlc.ChangeUserPasswordParams{Username: pgtype.Text{String: username, Valid: true}, Password: password})
-	if err != nil {
+	if _, err = q.ChangeUserPassword(ctx, sqlc.ChangeUserPasswordParams{Username: pgtype.Text{String: username, Valid: true}, Password: password}); err != nil {
 		buildAndSendError(c, "0")
 		return
 	}
