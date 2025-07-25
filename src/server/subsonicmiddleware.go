@@ -164,7 +164,7 @@ func SerializeAndSendBody(c *gin.Context, body any) {
 
 func debugLog(message string) {
 	if gin.Mode() == gin.DebugMode {
-		log.Printf(message)
+		log.Print(message)
 	}
 }
 

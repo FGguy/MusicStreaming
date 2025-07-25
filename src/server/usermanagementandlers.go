@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -151,31 +152,26 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	var (
-		username = c.Query("username")
-		password = c.Query("password")
-		email    = c.Query("email")
-	)
-	if username == "" || password == "" || email == "" {
-		buildAndSendError(c, "10")
-		return
-	}
-
 	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
 	}
 
-	userParams := make(map[string]string)
-	userParams["username"] = fmt.Sprintf("'%s'", username)
-	userParams["password"] = fmt.Sprintf("'%s'", password)
-	userParams["email"] = fmt.Sprintf("'%s'", email)
+	userParams := make(map[string]any)
+	userParams["username"] = c.Query("username")
+	userParams["password"] = c.Query("password")
+	userParams["email"] = c.Query("email")
+
+	if userParams["username"] == "" || userParams["password"] == "" || userParams["email"] == "" {
+		buildAndSendError(c, "10")
+		return
+	}
 
 	for _, userRole := range consts.SubsonicUserRoles {
 		enabled := c.Query(userRole)
 		if enabled == "true" || enabled == "false" {
-			userParams[userRole] = enabled
+			userParams[strings.ToLower(userRole)] = enabled
 		}
 	}
 
@@ -191,23 +187,21 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 			ids = append(ids, folderId)
 		}
 		//none of the ids are invalid
-		userParams["musicFolders"] = fmt.Sprintf("\"%s\"", strings.Join(ids, ";"))
+		userParams["musicfolders"] = fmt.Sprintf("\"%s\"", strings.Join(ids, ";"))
 	}
 
-	maxBitRate := c.Query("maxBitRate")
+	maxBitRate := c.Query("maxbitrate")
 	if slices.Contains(consts.SubsonicValidBitRates, maxBitRate) {
-		userParams["maxBitRate"] = maxBitRate
+		userParams["maxbitrate"] = maxBitRate
 	}
 
-	qParams := make([]string, 0, len(userParams))
-	values := make([]string, 0, len(userParams))
-	for param, value := range userParams {
-		qParams = append(qParams, param)
-		values = append(values, value)
+	insertSQL := goqu.Insert("users").Rows(userParams)
+	queryString, _, err := insertSQL.ToSQL()
+	if err != nil {
+		debugLog("Failed to generate query string.")
+		buildAndSendError(c, "0")
+		return
 	}
-	paramsString := strings.Join(qParams, ", ")
-	valuesString := strings.Join(values, ", ")
-	createUserQueryString := fmt.Sprintf("INSERT INTO Users (%s) VALUES (%s) ON CONFLICT (username) DO UPDATE SET username = EXCLUDED.username RETURNING *;", paramsString, valuesString)
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
@@ -216,7 +210,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 	defer conn.Release()
 
-	if _, err = conn.Exec(ctx, createUserQueryString); err != nil {
+	if _, err = conn.Exec(ctx, queryString); err != nil {
 		debugLogError("Failed creating user", err)
 		buildAndSendError(c, "0")
 		return
@@ -267,7 +261,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	for _, role := range consts.SubsonicUserRoles {
 		roleUpdate := c.Query(role)
 		if roleUpdate == "true" || roleUpdate == "false" {
-			userUpdates[role] = roleUpdate
+			userUpdates[strings.ToLower(role)] = roleUpdate
 		}
 	}
 	//check for update to musicFolderID
@@ -283,12 +277,12 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 			ids = append(ids, folderId)
 		}
 		//none of the ids are invalid
-		userUpdates["musicFolders"] = fmt.Sprintf("'%s'", strings.Join(ids, ";"))
+		userUpdates["musicfolders"] = fmt.Sprintf("'%s'", strings.Join(ids, ";"))
 	}
 
 	maxBitRate := c.Query("maxBitRate")
 	if slices.Contains(consts.SubsonicValidBitRates, maxBitRate) {
-		userUpdates["maxBitRate"] = maxBitRate
+		userUpdates["maxbitrate"] = maxBitRate
 	}
 
 	//if no valid updates abort
@@ -297,12 +291,16 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		return
 	}
 
-	updates := make([]string, 0, len(userUpdates))
-	for role, update := range userUpdates {
-		updates = append(updates, fmt.Sprintf("%s = %s", role, update))
+	sqlUpdate := goqu.Update("users").
+		Set(userUpdates).
+		Where(goqu.Ex{"username": username})
+
+	queryString, _, err := sqlUpdate.ToSQL()
+	if err != nil {
+		debugLog("Failed to generate query string.")
+		buildAndSendError(c, "0")
+		return
 	}
-	updatesString := strings.Join(updates, ",")
-	updateUserQueryString := fmt.Sprintf("UPDATE Users SET %s WHERE username = '%s';", updatesString, username)
 
 	conn, err := s.pg_pool.Acquire(ctx)
 	if err != nil {
@@ -311,7 +309,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	}
 	defer conn.Release()
 
-	if _, err = conn.Exec(ctx, updateUserQueryString); err != nil {
+	if _, err = conn.Exec(ctx, queryString); err != nil {
 		debugLogError("Failed updating user", err)
 		buildAndSendError(c, "0")
 		return
