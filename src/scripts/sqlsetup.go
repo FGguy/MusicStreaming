@@ -29,8 +29,8 @@ func SqlSetup(pg_pool *pgxpool.Pool) error {
 	}
 	defer conn.Release()
 
-	dropTables := "../sql/droptables.sql"
-	tables := "../sql/tables.sql"
+	dropTables := "./sql/droptables.sql"
+	tables := "./sql/tables.sql"
 
 	if cleanStart == "true" {
 		dropTablesScript, err := os.ReadFile(dropTables)

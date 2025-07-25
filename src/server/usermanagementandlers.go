@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	consts "music-streaming/consts"
 	sqlc "music-streaming/sql/sqlc"
@@ -20,6 +19,7 @@ import (
 // GET
 func (s *Server) hangleGetUser(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
+	contentType := c.MustGet("contentType").(string)
 	username := c.Query("username")
 	if username == "" {
 		buildAndSendError(c, "10")
@@ -28,17 +28,17 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 
 	ctx := context.Background()
 
-	userString, err := s.cache.Get(ctx, params.U).Result() //bug
-	if err != nil {                                        //if user is authenticated their info should be cached
+	userString, err := s.cache.Get(ctx, params.U).Result()
+	if err != nil {
 		debugLogError("Failed fetching user credentials from cache", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
-	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
+	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil {
 		debugLogError("Failed unmarshalling user", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
@@ -68,31 +68,26 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 		User:    types.MapSqlUserToSubsonicUser(&user, ""),
 	}
 
-	//build xml body for answer
-	xmlBody, err := xml.Marshal(subsonicRes)
-	if err != nil {
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
-		return
-	}
-	c.Data(http.StatusOK, "application/xml", xmlBody)
+	SerializeAndSendBody(c, subsonicRes)
 }
 
 // GET
 func (s *Server) hangleGetUsers(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
+	contentType := c.MustGet("contentType").(string)
 	ctx := context.Background()
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
 		debugLogError("Failed fetching user credentials from cache", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
 	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
 		debugLogError("Failed unmarshalling user", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
@@ -109,41 +104,37 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 	defer conn.Release()
 	q := sqlc.New(conn)
 
-	users, err := q.GetUsers(ctx)
+	sqlUsers, err := q.GetUsers(ctx)
 	if err != nil {
 		buildAndSendError(c, "0")
 		return
 	}
 
-	xmlUsers := make([]*types.SubsonicUser, 0, len(users))
-	for _, user := range users {
-		xmlUsers = append(xmlUsers, types.MapSqlUserToSubsonicUser(&user, ""))
+	Users := make([]*types.SubsonicUser, 0, len(sqlUsers))
+	for _, user := range sqlUsers {
+		Users = append(Users, types.MapSqlUserToSubsonicUser(&user, ""))
 	}
 
 	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
-		Users:   xmlUsers,
+		Users:   Users,
 	}
 
-	xmlBody, err := xml.Marshal(subsonicRes)
-	if err != nil {
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
-		return
-	}
-	c.Data(http.StatusOK, "application/xml", xmlBody)
+	SerializeAndSendBody(c, subsonicRes)
 }
 
 // POST
 func (s *Server) handleCreateUser(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
+	contentType := c.MustGet("contentType").(string)
 	ctx := context.Background()
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
 		debugLogError("Failed fetching user credentials from cache", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
@@ -151,7 +142,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	err = json.Unmarshal([]byte(userString), &cachedUser)
 	if err != nil { //if user is authenticated their info should be cached
 		debugLogError("Failed unmarshalling user", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
@@ -231,17 +222,13 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	xmlBody, err := xml.Marshal(subsonicRes)
-	if err != nil {
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
-		return
-	}
-	c.Data(http.StatusOK, "application/xml", xmlBody)
+	SerializeAndSendBody(c, subsonicRes)
 }
 
 // POST
 func (s *Server) handleUpdateUser(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
+	contentType := c.MustGet("contentType").(string)
 	username := c.Query("username")
 	if username == "" {
 		debugLog("Failed getting user from params")
@@ -254,14 +241,14 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
 		debugLogError("Failed fetching user credentials from cache", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
 	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
 		debugLogError("Failed unmarshalling user", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
@@ -306,12 +293,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 
 	//if no valid updates abort
 	if len(userUpdates) < 1 {
-		xmlBody, err := xml.Marshal(subsonicRes)
-		if err != nil {
-			c.Data(http.StatusInternalServerError, "application/xml", []byte{})
-			return
-		}
-		c.Data(http.StatusOK, "application/xml", xmlBody)
+		SerializeAndSendBody(c, subsonicRes)
 		return
 	}
 
@@ -335,30 +317,26 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		return
 	}
 
-	xmlBody, err := xml.Marshal(subsonicRes)
-	if err != nil {
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
-		return
-	}
-	c.Data(http.StatusOK, "application/xml", xmlBody)
+	SerializeAndSendBody(c, subsonicRes)
 }
 
 // POST
 func (s *Server) handleDeleteUser(c *gin.Context) {
 	params := c.MustGet("requiredParams").(requiredParams)
+	contentType := c.MustGet("contentType").(string)
 	ctx := context.Background()
 
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
 		debugLogError("Failed fetching user credentials from cache", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
 	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
 		debugLogError("Failed unmarshalling user", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
@@ -393,16 +371,12 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		Version: consts.SubsonicVersion,
 	}
 
-	xmlBody, err := xml.Marshal(subsonicRes)
-	if err != nil {
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
-		return
-	}
-	c.Data(http.StatusOK, "application/xml", xmlBody)
+	SerializeAndSendBody(c, subsonicRes)
 }
 
 // POST
 func (s *Server) handleChangePassword(c *gin.Context) {
+	contentType := c.MustGet("contentType").(string)
 	params := c.MustGet("requiredParams").(requiredParams)
 
 	username := c.Query("username")
@@ -416,14 +390,14 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	userString, err := s.cache.Get(ctx, params.U).Result() //bug
 	if err != nil {                                        //if user is authenticated their info should be cached
 		debugLogError("Failed fetching user credentials from cache", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
 	var cachedUser types.SubsonicUser
 	if err = json.Unmarshal([]byte(userString), &cachedUser); err != nil { //if user is authenticated their info should be cached
 		debugLogError("Failed unmarshalling user", err)
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
 
@@ -457,10 +431,5 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		Version: consts.SubsonicVersion,
 	}
 
-	xmlBody, err := xml.Marshal(subsonicRes)
-	if err != nil {
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
-		return
-	}
-	c.Data(http.StatusOK, "application/xml", xmlBody)
+	SerializeAndSendBody(c, subsonicRes)
 }

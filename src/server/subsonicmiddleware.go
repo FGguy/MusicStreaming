@@ -31,12 +31,18 @@ type requiredParams struct {
 }
 
 func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
+	c.Set("contentType", "application/xml")
+
 	var params requiredParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		buildAndSendError(c, "10")
 		return
 	}
 	c.Set("requiredParams", params)
+
+	if params.F == "json" {
+		c.Set("contentType", "application/json")
+	}
 
 	//validate Subsonic API compatibility with client
 	clientVersion := strings.Split(params.V, ".")
@@ -133,16 +139,27 @@ func buildAndSendError(c *gin.Context, errorCode string) {
 		Message: consts.SubsonicErrorMessages[errorCode],
 	}
 
-	xmlBody, err := xml.Marshal(subsonicRes)
+	SerializeAndSendBody(c, subsonicRes)
+}
 
-	//temp fix, disgusting
-	temp := strings.Replace(string(xmlBody), "></error>", "/>", 1)
+func SerializeAndSendBody(c *gin.Context, body any) {
+	var (
+		serializedBody []byte
+		err            error
+		contentType    = c.MustGet("contentType").(string)
+	)
+
+	if contentType == "application/json" {
+		serializedBody, err = json.Marshal(body)
+	} else {
+		serializedBody, err = xml.Marshal(body)
+	}
 
 	if err != nil {
-		c.Data(http.StatusInternalServerError, "application/xml", []byte{})
+		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
-	c.Data(http.StatusOK, "application/xml", []byte(temp))
+	c.Data(http.StatusOK, contentType, serializedBody)
 }
 
 func debugLog(message string) {
