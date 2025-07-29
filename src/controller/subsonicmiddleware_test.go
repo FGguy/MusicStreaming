@@ -1,4 +1,4 @@
-package server
+package controller
 
 import (
 	"context"
@@ -6,54 +6,17 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log"
 	consts "music-streaming/consts"
-	"music-streaming/scripts"
+	"music-streaming/data"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 )
-
-func getServerDependencies(t *testing.T) (pg_pool *pgxpool.Pool, cache *redis.Client, err error) {
-	//wd is package
-	err = godotenv.Load("../.env")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	//remember to defer closing outside of call
-	postgresString, ok := os.LookupEnv(("TEST_POSTGRES_CONNECTION_STRING"))
-	if !ok {
-		t.Fatalf("Failed to lookup postgres connection string")
-	}
-	pg_pool, err = pgxpool.New(context.Background(), postgresString)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	redisString, ok := os.LookupEnv(("TEST_REDIS_CONNECTION_STRING"))
-	if !ok {
-		t.Fatalf("Failed to lookup redis connection string")
-	}
-	opt, err := redis.ParseURL(redisString)
-	if err != nil {
-		return nil, nil, err
-	}
-	cache = redis.NewClient(opt)
-
-	if err = scripts.SqlSetup(pg_pool); err != nil {
-		log.Fatalf("Failed running sql setup script. Error: %s", err)
-	}
-
-	return pg_pool, cache, nil
-}
 
 func assertGetRequest(t *testing.T, req string, expectedStatus int, expectedBody string) {
 	resp, err := http.Get(req)
@@ -88,14 +51,17 @@ func assertPostRequest(t *testing.T, req string, formBody string, expectedStatus
 }
 
 func TestSubsonicMiddleware(t *testing.T) {
-	// Setup dependencies
-	pg_pool, cache, err := getServerDependencies(t)
-	if err != nil {
-		t.Fatalf("Failed to create dependencies for server in TestSystemHandlers, Error:%v", err)
+	if err := godotenv.Load("../.env"); err != nil {
+		t.Fatal("Error loading .env file")
 	}
-	defer pg_pool.Close()
+	// Setup dependencies
+	dataLayer, err := data.NewTest(context.Background())
+	if err != nil {
+		t.Fatalf("Failed initializing data layer. Error: %s", err)
+	}
+	defer dataLayer.Pg_pool.Close()
 
-	server := NewServer(pg_pool, cache)
+	server := NewServer(dataLayer)
 	ts := httptest.NewServer(server.Router)
 	defer ts.Close()
 
@@ -136,6 +102,7 @@ func TestSubsonicMiddleware(t *testing.T) {
 		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="40" message="Wrong username or password."></error></subsonic-response>`
 		assertGetRequest(t, req1, 200, expected)
 
+		expected = `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="0" message="A generic error."></error></subsonic-response>`
 		req2 := fmt.Sprintf("%s?u=NonExistingUser&t=%s&s=%s&v=%s&c=Test", baseURL, hashedPasswordHex, salt, consts.SubsonicVersion)
 		assertGetRequest(t, req2, 200, expected)
 	})

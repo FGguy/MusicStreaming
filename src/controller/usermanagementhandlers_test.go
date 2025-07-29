@@ -1,4 +1,4 @@
-package server
+package controller
 
 import (
 	"context"
@@ -6,22 +6,28 @@ import (
 	"encoding/hex"
 	"fmt"
 	consts "music-streaming/consts"
+	"music-streaming/data"
 	sqlc "music-streaming/sql/sqlc"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/joho/godotenv"
 )
 
 func TestUserManagementHandlers(t *testing.T) {
-	pg_pool, cache, err := getServerDependencies(t)
-	if err != nil {
-		t.Fatalf("Failed to create dependencies for server in TestSystemHandlers, Error:%v", err)
+	if err := godotenv.Load("../.env"); err != nil {
+		t.Fatal("Error loading .env file")
 	}
-	defer pg_pool.Close()
 
-	server := NewServer(pg_pool, cache)
+	dataLayer, err := data.NewTest(context.Background())
+	if err != nil {
+		t.Fatalf("Failed initializing data layer. Error: %s", err)
+	}
+	defer dataLayer.Pg_pool.Close()
+
+	server := NewServer(dataLayer)
 	ts := httptest.NewServer(server.Router)
 	defer ts.Close()
 
@@ -36,7 +42,7 @@ func TestUserManagementHandlers(t *testing.T) {
 
 	// Create test users
 	ctx := context.Background()
-	conn, err := pg_pool.Acquire(ctx)
+	conn, err := dataLayer.Pg_pool.Acquire(ctx)
 	if err != nil {
 		t.Fatalf("Failed to acquire DB connection")
 	}

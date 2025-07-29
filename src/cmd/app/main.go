@@ -5,16 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"music-streaming/scripts"
-	server "music-streaming/server"
+	controller "music-streaming/controller"
+	"music-streaming/data"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -26,25 +24,15 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	pg_pool, err := pgxpool.New(context.Background(), os.Getenv("POSTGRES_CONNECTION_STRING"))
+	dataLayer, err := data.New(context.Background())
 	if err != nil {
-		log.Fatalf("Unable to connect to postgres Database in main, Err: %s", err)
+		log.Fatalf("Failed initializing data layer. Error: %s", err)
 	}
-	defer pg_pool.Close()
-
-	opt, err := redis.ParseURL(os.Getenv("REDIS_CONNECTION_STRING"))
-	if err != nil {
-		log.Fatalf("Unable to connect to redis Database in main, Err: %s", err)
-	}
-	cache := redis.NewClient(opt)
-
-	if err = scripts.SqlSetup(pg_pool); err != nil {
-		log.Fatalf("Failed running sql setup script. Error: %s", err)
-	}
+	defer dataLayer.Pg_pool.Close()
 
 	serverError := make(chan error, 1)
 	go func() {
-		if err := server.NewServer(pg_pool, cache).Router.Run(fmt.Sprintf(":%d", PORT)); !errors.Is(err, http.ErrServerClosed) {
+		if err := controller.NewServer(dataLayer).Router.Run(fmt.Sprintf(":%d", PORT)); !errors.Is(err, http.ErrServerClosed) {
 			serverError <- err
 		}
 	}()

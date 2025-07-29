@@ -1,4 +1,4 @@
-package server
+package controller
 
 import (
 	"context"
@@ -8,16 +8,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
-
-	sqlc "music-streaming/sql/sqlc"
 
 	consts "music-streaming/consts"
 	types "music-streaming/types"
 	auth "music-streaming/util"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type requiredParams struct {
@@ -79,49 +75,22 @@ func (s *Server) subWithAuth(c *gin.Context) {
 		qUser           = requiredParams.U
 		qHashedPassword = requiredParams.T
 		qSalt           = requiredParams.S
-		password        string
-		cachedUser      types.SubsonicUser
 		ctx             = context.Background()
 	)
 
-	if err := s.cache.Get(ctx, qUser).Scan(&cachedUser); err != nil {
-		conn, err := s.pg_pool.Acquire(ctx)
-		if err != nil {
-			debugLogError("Failed acquiring connection from postgres connection pool", err)
-			buildAndSendError(c, "0")
-			return
-		}
-		defer conn.Release()
-		query := sqlc.New(conn)
-
-		user, err := query.GetUserByUsername(ctx, pgtype.Text{String: qUser, Valid: true})
-		if err != nil {
-			debugLogError("User does not exist", err)
-			buildAndSendError(c, "40")
-			return
-		}
-
-		encodedUser, err := json.Marshal(types.MapSqlUserToSubsonicUser(&user, user.Password))
-		if err != nil {
-			debugLogError("Failed encoding user credentials", err)
-			buildAndSendError(c, "0")
-			return
-		}
-		if err = s.cache.Set(ctx, user.Username.String, encodedUser, time.Minute*10).Err(); err != nil {
-			debugLogError("Failed creating cache entry for user credentials", err)
-			buildAndSendError(c, "0")
-			return
-		}
-		password = user.Password
-	} else {
-		password = cachedUser.Password
+	user, err := s.dataLayer.GetUser(ctx, qUser)
+	if err != nil {
+		debugLogError("Failed fetching user for authorization", err)
+		buildAndSendError(c, "0")
+		return
 	}
 
-	if !auth.ValidatePassword(qHashedPassword, qSalt, password) {
+	if !auth.ValidatePassword(qHashedPassword, qSalt, user.Password) {
 		debugLog("Wrong Password.")
 		buildAndSendError(c, "40")
 		return
 	}
+	c.Set("requestingUser", user) //so further routes can check permission
 }
 
 // Util

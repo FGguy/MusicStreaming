@@ -1,30 +1,30 @@
-package server
+package controller
 
 import (
+	consts "music-streaming/consts"
+	"music-streaming/data"
+	types "music-streaming/types"
+
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 )
 
 type Config struct {
 }
 
 type Server struct {
-	Router  *gin.Engine
-	pg_pool *pgxpool.Pool
-	cache   *redis.Client
-	config  *Config
+	Router    *gin.Engine
+	config    *Config
+	dataLayer *data.DataLayer
 }
 
-func NewServer(pg_pool *pgxpool.Pool, cache *redis.Client) *Server {
+func NewServer(dataLayer *data.DataLayer) *Server {
 	router := gin.Default()
 	config := &Config{}
 
 	server := &Server{
-		Router:  router,
-		pg_pool: pg_pool,
-		cache:   cache,
-		config:  config,
+		Router:    router,
+		config:    config,
+		dataLayer: dataLayer,
 	}
 	server.mountHandlers()
 
@@ -44,4 +44,14 @@ func (s *Server) mountHandlers() {
 		api.POST("/deleteUser", s.handleDeleteUser)
 		api.POST("/changePassword", s.handleChangePassword)
 	}
+}
+
+func (s *Server) handlePing(c *gin.Context) {
+	subsonicRes := types.SubsonicResponse{
+		Xmlns:   consts.Xmlns,
+		Status:  "ok",
+		Version: consts.SubsonicVersion,
+	}
+
+	SerializeAndSendBody(c, subsonicRes)
 }
