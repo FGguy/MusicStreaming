@@ -24,7 +24,7 @@ func (d *DataLayer) GetUser(ctx context.Context, username string) (*types.Subson
 
 		user, err := query.GetUserByUsername(ctx, pgtype.Text{String: username, Valid: true})
 		if err != nil {
-			return nil, err
+			return nil, &UserNotFoundError{username: username}
 		}
 
 		encodedUser, err := json.Marshal(types.MapSqlUserToSubsonicUser(&user, user.Password))
