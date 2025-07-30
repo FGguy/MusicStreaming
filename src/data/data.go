@@ -11,16 +11,20 @@ import (
 
 /*
 	For queries implemented directly by sqlc just get a SqlcConn
-	and run the query. For more complicated queries, use queries implemented on the DataLayer Type
+	and run the query. For more complicated queries, use queries implemented on the DataLayerPg Type
 */
 
-type DataLayer struct {
+type DataLayer interface {
+	SQLUserManagement
+}
+
+type DataLayerPg struct {
 	Pg_pool *pgxpool.Pool
 	cache   *redis.Client
 }
 
 // defer pg_pool.Close() has to be called in parent scope
-func New(ctx context.Context) (*DataLayer, error) {
+func New(ctx context.Context) (*DataLayerPg, error) {
 	pg_pool, err := pgxpool.New(ctx, os.Getenv("POSTGRES_CONNECTION_STRING"))
 	if err != nil {
 		return nil, err
@@ -36,13 +40,13 @@ func New(ctx context.Context) (*DataLayer, error) {
 		return nil, err
 	}
 
-	return &DataLayer{
+	return &DataLayerPg{
 		Pg_pool: pg_pool,
 		cache:   cache,
 	}, nil
 }
 
-func NewTest(ctx context.Context) (*DataLayer, error) {
+func NewTest(ctx context.Context) (*DataLayerPg, error) {
 	pg_pool, err := pgxpool.New(ctx, os.Getenv("TEST_POSTGRES_CONNECTION_STRING"))
 	if err != nil {
 		return nil, err
@@ -58,7 +62,7 @@ func NewTest(ctx context.Context) (*DataLayer, error) {
 		return nil, err
 	}
 
-	return &DataLayer{
+	return &DataLayerPg{
 		Pg_pool: pg_pool,
 		cache:   cache,
 	}, nil

@@ -14,10 +14,10 @@ type Config struct {
 type Server struct {
 	Router    *gin.Engine
 	config    *Config
-	dataLayer *data.DataLayer
+	dataLayer data.DataLayer
 }
 
-func NewServer(dataLayer *data.DataLayer) *Server {
+func NewServer(dataLayer *data.DataLayerPg) *Server {
 	router := gin.Default()
 	config := &Config{}
 

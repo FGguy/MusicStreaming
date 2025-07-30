@@ -11,7 +11,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (d *DataLayer) GetUser(ctx context.Context, username string) (*types.SubsonicUser, error) {
+type SQLUserManagement interface {
+	GetUser(ctx context.Context, username string) (*types.SubsonicUser, error)
+	GetUsers(ctx context.Context) ([]*types.SubsonicUser, error)
+	CreateUser(ctx context.Context, fields map[string]any) error
+	UpdateUser(ctx context.Context, username string, fields map[string]string) error
+	DeleteUser(ctx context.Context, username string) error
+	ChangeUserPassword(ctx context.Context, username string, password string) error
+}
+
+func (d *DataLayerPg) GetUser(ctx context.Context, username string) (*types.SubsonicUser, error) {
 	var cachedUser types.SubsonicUser
 	userString, err := d.cache.Get(ctx, username).Result()
 	if err != nil {
@@ -42,7 +51,29 @@ func (d *DataLayer) GetUser(ctx context.Context, username string) (*types.Subson
 	return &cachedUser, nil
 }
 
-func (d *DataLayer) CreateUser(ctx context.Context, fields map[string]any) error {
+func (d *DataLayerPg) GetUsers(ctx context.Context) ([]*types.SubsonicUser, error) {
+	conn, err := d.Pg_pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	q := sqlc.New(conn)
+
+	sqlUsers, err := q.GetUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	users := make([]*types.SubsonicUser, 0, len(sqlUsers))
+	for _, user := range sqlUsers {
+		temp := types.MapSqlUserToSubsonicUser(&user, "")
+		temp.Password = ""
+		users = append(users, temp)
+	}
+	return users, nil
+}
+
+func (d *DataLayerPg) CreateUser(ctx context.Context, fields map[string]any) error {
 	insertSQL := goqu.Insert("users").Rows(fields)
 	queryString, _, err := insertSQL.ToSQL()
 	if err != nil {
@@ -61,7 +92,7 @@ func (d *DataLayer) CreateUser(ctx context.Context, fields map[string]any) error
 	return nil
 }
 
-func (d *DataLayer) UpdateUser(ctx context.Context, username string, fields map[string]string) error {
+func (d *DataLayerPg) UpdateUser(ctx context.Context, username string, fields map[string]string) error {
 	sqlUpdate := goqu.Update("users").
 		Set(fields).
 		Where(goqu.Ex{"username": username})
@@ -78,6 +109,34 @@ func (d *DataLayer) UpdateUser(ctx context.Context, username string, fields map[
 	defer conn.Release()
 
 	if _, err = conn.Exec(ctx, queryString); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *DataLayerPg) DeleteUser(ctx context.Context, username string) error {
+	conn, err := d.Pg_pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	q := sqlc.New(conn)
+
+	if _, err = q.DeleteUser(ctx, pgtype.Text{String: username, Valid: true}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *DataLayerPg) ChangeUserPassword(ctx context.Context, username string, password string) error {
+	conn, err := d.Pg_pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	q := sqlc.New(conn)
+
+	if _, err = q.ChangeUserPassword(ctx, sqlc.ChangeUserPasswordParams{Username: pgtype.Text{String: username, Valid: true}, Password: password}); err != nil {
 		return err
 	}
 	return nil

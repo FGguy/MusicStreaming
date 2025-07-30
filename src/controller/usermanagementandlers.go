@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	consts "music-streaming/consts"
-	sqlc "music-streaming/sql/sqlc"
 	types "music-streaming/types"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // GET
@@ -60,30 +58,17 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 		return
 	}
 
-	conn, err := s.dataLayer.Pg_pool.Acquire(ctx)
+	users, err := s.dataLayer.GetUsers(ctx)
 	if err != nil {
 		buildAndSendError(c, "0")
 		return
-	}
-	defer conn.Release()
-	q := sqlc.New(conn)
-
-	sqlUsers, err := q.GetUsers(ctx)
-	if err != nil {
-		buildAndSendError(c, "0")
-		return
-	}
-
-	Users := make([]*types.SubsonicUser, 0, len(sqlUsers))
-	for _, user := range sqlUsers {
-		Users = append(Users, types.MapSqlUserToSubsonicUser(&user, ""))
 	}
 
 	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
 		Version: consts.SubsonicVersion,
-		Users:   Users,
+		Users:   users,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)
@@ -139,6 +124,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	if err := s.dataLayer.CreateUser(ctx, userParams); err != nil {
 		debugLogError("Failed to create user", err)
 		buildAndSendError(c, "0")
+		return
 	}
 
 	subsonicRes := types.SubsonicResponse{
@@ -202,6 +188,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 		if err := s.dataLayer.UpdateUser(ctx, username, userUpdates); err != nil {
 			debugLogError("Failed to create user", err)
 			buildAndSendError(c, "0")
+			return
 		}
 	}
 
@@ -233,15 +220,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 		return
 	}
 
-	conn, err := s.dataLayer.Pg_pool.Acquire(ctx)
-	if err != nil {
-		buildAndSendError(c, "0")
-		return
-	}
-	defer conn.Release()
-	q := sqlc.New(conn)
-
-	if _, err = q.DeleteUser(ctx, pgtype.Text{String: username, Valid: true}); err != nil {
+	if err := s.dataLayer.DeleteUser(ctx, username); err != nil {
 		buildAndSendError(c, "0")
 		return
 	}
@@ -279,15 +258,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 		return
 	}
 
-	conn, err := s.dataLayer.Pg_pool.Acquire(ctx)
-	if err != nil {
-		buildAndSendError(c, "0")
-		return
-	}
-	defer conn.Release()
-	q := sqlc.New(conn)
-
-	if _, err = q.ChangeUserPassword(ctx, sqlc.ChangeUserPasswordParams{Username: pgtype.Text{String: username, Valid: true}, Password: password}); err != nil {
+	if err := s.dataLayer.ChangeUserPassword(ctx, username, password); err != nil {
 		buildAndSendError(c, "0")
 		return
 	}
