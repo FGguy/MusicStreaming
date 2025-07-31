@@ -7,13 +7,14 @@ import (
 )
 
 type SubsonicResponse struct {
-	XMLName xml.Name        `xml:"subsonic-response" json:"-"`
-	Xmlns   string          `xml:"xmlns,attr" json:"-"`
-	Status  string          `xml:"status,attr" json:"status"`
-	Version string          `xml:"version,attr" json:"version"`
-	Error   *SubsonicError  `xml:"error,omitempty" json:"error,omitempty"`
-	User    *SubsonicUser   `xml:"user,omitempty" json:"user,omitempty"`
-	Users   []*SubsonicUser `xml:"users,omitempty" json:"users,omitempty"`
+	XMLName    xml.Name            `xml:"subsonic-response" json:"-"`
+	Xmlns      string              `xml:"xmlns,attr" json:"-"`
+	Status     string              `xml:"status,attr" json:"status"`
+	Version    string              `xml:"version,attr" json:"version"`
+	Error      *SubsonicError      `xml:"error,omitempty" json:"error,omitempty"`
+	User       *SubsonicUser       `xml:"user,omitempty" json:"user,omitempty"`
+	ScanStatus *SubsonicScanStatus `xml:"scanStatus,omitempty" json:"scanStatus,omitempty"`
+	Users      []*SubsonicUser     `xml:"users,omitempty" json:"users,omitempty"`
 }
 
 type SubsonicError struct {
@@ -43,6 +44,12 @@ type SubsonicUser struct {
 	VideoConversionRole bool     `xml:"videoConversionRole,attr" json:"videoConversionRole"`
 	MusicfolderId       []string `xml:"folder,omitempty" json:"folder,omitempty"`
 	MaxBitRate          int32    `xml:"maxBitRate,attr" json:"maxBitRate"`
+}
+
+type SubsonicScanStatus struct {
+	XMLName  xml.Name `xml:"scanStatus" json:"-"`
+	Scanning bool     `xml:"scanning,attr" json:"scanning"`
+	Count    int      `xml:"count,attr" json:"count"`
 }
 
 func MapSqlUserToSubsonicUser(user *sqlc.User, password string) *SubsonicUser {
