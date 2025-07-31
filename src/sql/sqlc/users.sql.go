@@ -7,8 +7,6 @@ package sql
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const changeUserPassword = `-- name: ChangeUserPassword :one
@@ -17,7 +15,7 @@ WHERE username = $1 RETURNING username, password, email, scrobblingenabled, ldap
 `
 
 type ChangeUserPasswordParams struct {
-	Username pgtype.Text
+	Username string
 	Password string
 }
 
@@ -56,7 +54,7 @@ RETURNING username, password, email, scrobblingenabled, ldapauthenticated, admin
 `
 
 type CreateAdminUserParams struct {
-	Username pgtype.Text
+	Username string
 	Password string
 	Email    string
 }
@@ -96,7 +94,7 @@ RETURNING username, password, email, scrobblingenabled, ldapauthenticated, admin
 `
 
 type CreateDefaultUserParams struct {
-	Username pgtype.Text
+	Username string
 	Password string
 	Email    string
 }
@@ -133,7 +131,7 @@ DELETE FROM Users
 WHERE username = $1 RETURNING username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, username pgtype.Text) (User, error) {
+func (q *Queries) DeleteUser(ctx context.Context, username string) (User, error) {
 	row := q.db.QueryRow(ctx, deleteUser, username)
 	var i User
 	err := row.Scan(
@@ -165,7 +163,7 @@ SELECT username, password, email, scrobblingenabled, ldapauthenticated, adminrol
 WHERE username = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByUsername(ctx context.Context, username pgtype.Text) (User, error) {
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByUsername, username)
 	var i User
 	err := row.Scan(

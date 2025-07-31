@@ -47,7 +47,7 @@ type SubsonicUser struct {
 
 func MapSqlUserToSubsonicUser(user *sqlc.User, password string) *SubsonicUser {
 	return &SubsonicUser{
-		Username:            user.Username.String,
+		Username:            user.Username,
 		Email:               user.Email,
 		Password:            password,
 		ScrobblingEnabled:   user.Scrobblingenabled,

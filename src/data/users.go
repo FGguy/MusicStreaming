@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type SQLUserManagement interface {
@@ -31,7 +30,7 @@ func (d *DataLayerPg) GetUser(ctx context.Context, username string) (*types.Subs
 		defer conn.Release()
 		query := sqlc.New(conn)
 
-		user, err := query.GetUserByUsername(ctx, pgtype.Text{String: username, Valid: true})
+		user, err := query.GetUserByUsername(ctx, username)
 		if err != nil {
 			return nil, &UserNotFoundError{username: username}
 		}
@@ -40,7 +39,7 @@ func (d *DataLayerPg) GetUser(ctx context.Context, username string) (*types.Subs
 		if err != nil {
 			return nil, err
 		}
-		if err = d.cache.Set(ctx, user.Username.String, encodedUser, time.Minute*10).Err(); err != nil {
+		if err = d.cache.Set(ctx, user.Username, encodedUser, time.Minute*10).Err(); err != nil {
 			return nil, err
 		}
 		return types.MapSqlUserToSubsonicUser(&user, user.Password), nil
@@ -122,7 +121,7 @@ func (d *DataLayerPg) DeleteUser(ctx context.Context, username string) error {
 	defer conn.Release()
 	q := sqlc.New(conn)
 
-	if _, err = q.DeleteUser(ctx, pgtype.Text{String: username, Valid: true}); err != nil {
+	if _, err = q.DeleteUser(ctx, username); err != nil {
 		return err
 	}
 	return nil
@@ -136,7 +135,7 @@ func (d *DataLayerPg) ChangeUserPassword(ctx context.Context, username string, p
 	defer conn.Release()
 	q := sqlc.New(conn)
 
-	if _, err = q.ChangeUserPassword(ctx, sqlc.ChangeUserPasswordParams{Username: pgtype.Text{String: username, Valid: true}, Password: password}); err != nil {
+	if _, err = q.ChangeUserPassword(ctx, sqlc.ChangeUserPasswordParams{Username: username, Password: password}); err != nil {
 		return err
 	}
 	return nil

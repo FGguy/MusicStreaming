@@ -8,8 +8,44 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Album struct {
+	AlbumID   int32
+	ArtistID  pgtype.Int4
+	Name      string
+	CoverArt  pgtype.Text
+	SongCount pgtype.Int4
+	Created   pgtype.Timestamp
+	Duration  pgtype.Int4
+	Artist    pgtype.Text
+}
+
+type Artist struct {
+	ArtistID   int32
+	Name       string
+	CoverArt   pgtype.Text
+	AlbumCount pgtype.Int4
+}
+
+type Song struct {
+	SongID      int32
+	AlbumID     pgtype.Int4
+	Title       string
+	Album       pgtype.Text
+	Artist      pgtype.Text
+	IsDir       pgtype.Bool
+	CoverArt    pgtype.Text
+	Created     pgtype.Timestamp
+	Duration    pgtype.Int4
+	BitRate     pgtype.Int4
+	Size        pgtype.Int4
+	Suffix      pgtype.Text
+	ContentType pgtype.Text
+	IsVideo     pgtype.Bool
+	Path        string
+}
+
 type User struct {
-	Username            pgtype.Text
+	Username            string
 	Password            string
 	Email               string
 	Scrobblingenabled   bool

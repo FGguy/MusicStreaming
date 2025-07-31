@@ -12,7 +12,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/joho/godotenv"
 )
 
@@ -50,12 +49,12 @@ func TestUserManagementHandlers(t *testing.T) {
 	q := sqlc.New(conn)
 
 	testUser1 := sqlc.CreateDefaultUserParams{
-		Username: pgtype.Text{String: "test1", Valid: true},
+		Username: "test1",
 		Password: "test1",
 		Email:    "test1",
 	}
 	testUser2 := sqlc.CreateDefaultUserParams{
-		Username: pgtype.Text{String: "test2", Valid: true},
+		Username: "test2",
 		Password: "test2",
 		Email:    "test2",
 	}
@@ -80,16 +79,16 @@ func TestUserManagementHandlers(t *testing.T) {
 
 	t.Run("/rest/getUser route", func(t *testing.T) {
 		// Admin accessing user
-		reqAdmin := fmt.Sprintf("%s/rest/getUser?u=%s&t=%s&s=%s&v=%s&c=Test&username=%s", ts.URL, adminName, adminHashedPasswordHex, salt, version, testUser1.Username.String)
+		reqAdmin := fmt.Sprintf("%s/rest/getUser?u=%s&t=%s&s=%s&v=%s&c=Test&username=%s", ts.URL, adminName, adminHashedPasswordHex, salt, version, testUser1.Username)
 		expectedResponse = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.16.1\"><user username=\"test1\" email=\"test1\" scrobblingEnabled=\"false\" ldapAuthenticated=\"false\" adminRole=\"false\" settingsRole=\"true\" streamRole=\"true\" jukeboxRole=\"false\" downloadRole=\"false\" uploadRole=\"false\" playlistRole=\"false\" coverArtRole=\"false\" commentRole=\"false\" podcastRole=\"false\" shareRole=\"false\" videoConversionRole=\"false\" maxBitRate=\"0\"></user></subsonic-response>"
 		assertGetRequest(t, reqAdmin, 200, expectedResponse)
 
 		// User accessing self
-		reqSelf := fmt.Sprintf("%s/rest/getUser?u=%s&t=%s&s=%s&v=%s&c=Test&username=%s", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version, testUser1.Username.String)
+		reqSelf := fmt.Sprintf("%s/rest/getUser?u=%s&t=%s&s=%s&v=%s&c=Test&username=%s", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version, testUser1.Username)
 		assertGetRequest(t, reqSelf, 200, expectedResponse)
 
 		// User accessing another user
-		reqOther := fmt.Sprintf("%s/rest/getUser?u=%s&t=%s&s=%s&v=%s&c=Test&username=%s", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version, testUser2.Username.String)
+		reqOther := fmt.Sprintf("%s/rest/getUser?u=%s&t=%s&s=%s&v=%s&c=Test&username=%s", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version, testUser2.Username)
 		expectedResponse = `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="50" message="User is not authorized for the given operation."></error></subsonic-response>`
 		assertGetRequest(t, reqOther, 200, expectedResponse)
 	})
@@ -100,7 +99,7 @@ func TestUserManagementHandlers(t *testing.T) {
 		expectedResponse = "<subsonic-response xmlns=\"http://subsonic.org/restapi\" status=\"ok\" version=\"1.16.1\"><user username=\"default\" email=\"default\" scrobblingEnabled=\"false\" ldapAuthenticated=\"false\" adminRole=\"true\" settingsRole=\"true\" streamRole=\"true\" jukeboxRole=\"false\" downloadRole=\"false\" uploadRole=\"false\" playlistRole=\"false\" coverArtRole=\"false\" commentRole=\"false\" podcastRole=\"false\" shareRole=\"false\" videoConversionRole=\"false\" maxBitRate=\"0\"></user><user username=\"test1\" email=\"test1\" scrobblingEnabled=\"false\" ldapAuthenticated=\"false\" adminRole=\"false\" settingsRole=\"true\" streamRole=\"true\" jukeboxRole=\"false\" downloadRole=\"false\" uploadRole=\"false\" playlistRole=\"false\" coverArtRole=\"false\" commentRole=\"false\" podcastRole=\"false\" shareRole=\"false\" videoConversionRole=\"false\" maxBitRate=\"0\"></user><user username=\"test2\" email=\"test2\" scrobblingEnabled=\"false\" ldapAuthenticated=\"false\" adminRole=\"false\" settingsRole=\"true\" streamRole=\"true\" jukeboxRole=\"false\" downloadRole=\"false\" uploadRole=\"false\" playlistRole=\"false\" coverArtRole=\"false\" commentRole=\"false\" podcastRole=\"false\" shareRole=\"false\" videoConversionRole=\"false\" maxBitRate=\"0\"></user></subsonic-response>"
 		assertGetRequest(t, reqAdmin, 200, expectedResponse)
 		//Not Admin
-		reqOther := fmt.Sprintf("%s/rest/getUsers?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version)
+		reqOther := fmt.Sprintf("%s/rest/getUsers?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version)
 		expectedResponse = `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="50" message="User is not authorized for the given operation."></error></subsonic-response>`
 		assertGetRequest(t, reqOther, 200, expectedResponse)
 	})
@@ -118,7 +117,7 @@ func TestUserManagementHandlers(t *testing.T) {
 
 		// Not Admin
 		formBody = fmt.Sprintf("username=%s&password=%s&email=%s", "test5", "test5", "test5")
-		reqOther := fmt.Sprintf("%s/rest/createUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version)
+		reqOther := fmt.Sprintf("%s/rest/createUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version)
 		expectedResponse = `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="50" message="User is not authorized for the given operation."></error></subsonic-response>`
 		assertPostRequest(t, reqOther, formBody, 200, expectedResponse)
 	})
@@ -132,48 +131,48 @@ func TestUserManagementHandlers(t *testing.T) {
 
 		// is self && settings role => OK
 		formBody = "username=test1&coverArtRole=true"
-		reqSelf := fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version)
+		reqSelf := fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version)
 		assertPostRequest(t, reqSelf, formBody, 200, expectedResponse)
 
 		// is self && !settings role => NOT OK
 		formBody = "username=test2&email=test@example.com"
-		reqSelf = fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser2.Username.String, testUser2HashedPasswordHex, salt, version)
+		reqSelf = fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser2.Username, testUser2HashedPasswordHex, salt, version)
 		expectedResponse = `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="50" message="User is not authorized for the given operation."></error></subsonic-response>`
 		assertPostRequest(t, reqSelf, formBody, 200, expectedResponse)
 
 		// !is self && !settings role
 		formBody = "username=test1&email=shouldfail@example.com"
-		reqOther := fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser2.Username.String, testUser2HashedPasswordHex, salt, version)
+		reqOther := fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser2.Username, testUser2HashedPasswordHex, salt, version)
 		assertPostRequest(t, reqOther, formBody, 200, expectedResponse)
 
 		// !is self && settings role
 		formBody = "username=test2&uploadRole=true"
-		reqOther = fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version)
+		reqOther = fmt.Sprintf("%s/rest/updateUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version)
 		assertPostRequest(t, reqOther, formBody, 200, expectedResponse)
 	})
 
 	t.Run("/rest/changePassword route", func(t *testing.T) {
 		// Admin
-		formBody := fmt.Sprintf("username=%s&password=%s", testUser1.Username.String, testUser1.Password)
+		formBody := fmt.Sprintf("username=%s&password=%s", testUser1.Username, testUser1.Password)
 		reqAdmin := fmt.Sprintf("%s/rest/changePassword?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, adminName, adminHashedPasswordHex, salt, version)
 		expectedResponse := `<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1"></subsonic-response>`
 		assertPostRequest(t, reqAdmin, formBody, 200, expectedResponse)
 
 		// User == User
-		reqSelf := fmt.Sprintf("%s/rest/changePassword?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version)
+		reqSelf := fmt.Sprintf("%s/rest/changePassword?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version)
 		assertPostRequest(t, reqSelf, formBody, 200, expectedResponse)
 
 		// User != User
-		formBody = fmt.Sprintf("username=%s&password=%s", testUser2.Username.String, "foo")
-		reqOther := fmt.Sprintf("%s/rest/changePassword?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version)
+		formBody = fmt.Sprintf("username=%s&password=%s", testUser2.Username, "foo")
+		reqOther := fmt.Sprintf("%s/rest/changePassword?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version)
 		expectedResponse = `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="50" message="User is not authorized for the given operation."></error></subsonic-response>`
 		assertPostRequest(t, reqOther, formBody, 200, expectedResponse)
 	})
 
 	t.Run("/rest/deleteUser route", func(t *testing.T) {
 		// Not Admin
-		formBody := fmt.Sprintf("username=%s", testUser1.Username.String)
-		reqOther := fmt.Sprintf("%s/rest/deleteUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username.String, testUser1HashedPasswordHex, salt, version)
+		formBody := fmt.Sprintf("username=%s", testUser1.Username)
+		reqOther := fmt.Sprintf("%s/rest/deleteUser?u=%s&t=%s&s=%s&v=%s&c=Test", ts.URL, testUser1.Username, testUser1HashedPasswordHex, salt, version)
 		expectedResponse := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="50" message="User is not authorized for the given operation."></error></subsonic-response>`
 		assertPostRequest(t, reqOther, formBody, 200, expectedResponse)
 

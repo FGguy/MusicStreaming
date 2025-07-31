@@ -6,7 +6,8 @@ import (
 	sqlc "music-streaming/sql/sqlc"
 	"os"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"errors"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -20,7 +21,7 @@ func SqlSetup(pg_pool *pgxpool.Pool) error {
 	)
 
 	if !adminNameDefined || !adminPasswordDefined || !adminEmailDefined {
-		return fmt.Errorf("SqlSetup: Failed to get admin credentials from ENV. Make sure the variables ADMIN_NAME and ADMIN_PASSWORD are defined in your .env or in the docker-compose file.")
+		return errors.New("SqlSetup: Failed to get admin credentials from ENV. Make sure the variables ADMIN_NAME and ADMIN_PASSWORD are defined in your .env or in the docker-compose file")
 	}
 
 	conn, err := pg_pool.Acquire(ctx)
@@ -53,7 +54,7 @@ func SqlSetup(pg_pool *pgxpool.Pool) error {
 	}
 
 	q := sqlc.New(conn)
-	if _, err = q.CreateAdminUser(ctx, sqlc.CreateAdminUserParams{Username: pgtype.Text{String: adminName, Valid: true}, Password: adminPassword, Email: adminEmail}); err != nil {
+	if _, err = q.CreateAdminUser(ctx, sqlc.CreateAdminUserParams{Username: adminName, Password: adminPassword, Email: adminEmail}); err != nil {
 		return fmt.Errorf("SqlSetup: Failed to create admin user, Err: %s", err)
 	}
 
