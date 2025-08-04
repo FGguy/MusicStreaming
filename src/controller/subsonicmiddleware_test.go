@@ -51,7 +51,12 @@ func assertPostRequest(t *testing.T, req string, formBody string, expectedStatus
 }
 
 func TestSubsonicMiddleware(t *testing.T) {
-	if err := godotenv.Load("../.env"); err != nil {
+	err := os.Chdir("..")
+	if err != nil {
+		t.Fatalf("Failed to change working directory: %v", err)
+	}
+
+	if err := godotenv.Load(".env"); err != nil {
 		t.Fatal("Error loading .env file")
 	}
 	// Setup dependencies
@@ -62,6 +67,9 @@ func TestSubsonicMiddleware(t *testing.T) {
 	defer dataLayer.Pg_pool.Close()
 
 	server := NewServer(dataLayer)
+	if err = server.LoadConfig(); err != nil {
+		t.Fatalf("Failed initializing data layer. Error: %s", err)
+	}
 	ts := httptest.NewServer(server.Router)
 	defer ts.Close()
 

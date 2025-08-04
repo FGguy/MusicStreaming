@@ -1,12 +1,14 @@
 package controller
 
 import (
+	"log"
 	consts "music-streaming/consts"
 	"music-streaming/data"
 	types "music-streaming/types"
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 type State struct {
@@ -15,6 +17,7 @@ type State struct {
 }
 
 type Config struct {
+	MusicDirectories []string `mapstructure:"music-directories"`
 }
 
 type Server struct {
@@ -28,18 +31,37 @@ type Server struct {
 
 func NewServer(dataLayer *data.DataLayerPg) *Server {
 	router := gin.Default()
-	config := &Config{}
 	state := &State{scanning: false, count: 0}
 
 	server := &Server{
 		Router:    router,
-		config:    config,
 		state:     state,
 		dataLayer: dataLayer,
 	}
 	server.mountHandlers()
 
 	return server
+}
+
+func (s *Server) LoadConfig() error {
+	viper.SetConfigName("musicstreaming")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
+		return err
+	}
+
+	s.config = &config
+
+	log.Printf("Using config file: %s\n", viper.ConfigFileUsed())
+	log.Printf("Loaded config: %+v\n", config)
+	return nil
 }
 
 func (s *Server) mountHandlers() {
@@ -72,16 +94,12 @@ func (s *Server) handlePing(c *gin.Context) {
 }
 
 func (s *Server) MediaScan() {
-	s.mu.Lock()
-	s.state.scanning = true
-	s.state.count = 0
-	s.mu.Unlock()
+	log.Println("Starting Scan")
 
-	topLevelDirs := []string{}
 	mediaCount := make(chan int)
 	done := make(chan struct{})
 
-	go s.dataLayer.MediaScan(topLevelDirs, mediaCount, done)
+	go s.dataLayer.MediaScan(s.config.MusicDirectories, mediaCount, done)
 
 	for {
 		select {
@@ -90,6 +108,7 @@ func (s *Server) MediaScan() {
 			s.state.count += count
 			s.mu.Unlock()
 		case <-done:
+			log.Println("Finished Scan")
 			s.mu.Lock()
 			s.state.scanning = false
 			s.mu.Unlock()

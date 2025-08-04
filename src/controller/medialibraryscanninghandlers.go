@@ -34,16 +34,22 @@ func (s *Server) handleStartScan(c *gin.Context) {
 		return
 	}
 
+	var scanStatus *types.SubsonicScanStatus
 	if !s.state.scanning {
 		go s.MediaScan()
-	}
 
-	s.mu.Lock()
-	scanStatus := &types.SubsonicScanStatus{
-		Scanning: s.state.scanning,
-		Count:    s.state.count,
+		scanStatus = &types.SubsonicScanStatus{
+			Scanning: true,
+			Count:    0,
+		}
+	} else {
+		s.mu.Lock()
+		scanStatus = &types.SubsonicScanStatus{
+			Scanning: s.state.scanning,
+			Count:    s.state.count,
+		}
+		s.mu.Unlock()
 	}
-	s.mu.Unlock()
 
 	subsonicRes := types.SubsonicResponse{
 		Xmlns:      consts.Xmlns,

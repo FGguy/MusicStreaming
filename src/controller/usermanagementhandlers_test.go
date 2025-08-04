@@ -16,7 +16,7 @@ import (
 )
 
 func TestUserManagementHandlers(t *testing.T) {
-	if err := godotenv.Load("../.env"); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		t.Fatal("Error loading .env file")
 	}
 
@@ -27,6 +27,9 @@ func TestUserManagementHandlers(t *testing.T) {
 	defer dataLayer.Pg_pool.Close()
 
 	server := NewServer(dataLayer)
+	if err = server.LoadConfig(); err != nil {
+		t.Fatalf("Failed initializing data layer. Error: %s", err)
+	}
 	ts := httptest.NewServer(server.Router)
 	defer ts.Close()
 

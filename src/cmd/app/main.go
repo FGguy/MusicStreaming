@@ -30,9 +30,14 @@ func main() {
 	}
 	defer dataLayer.Pg_pool.Close()
 
+	server := controller.NewServer(dataLayer)
+	if err = server.LoadConfig(); err != nil {
+		log.Fatalf("Failed loading server configuration file. Error: %s", err)
+	}
+
 	serverError := make(chan error, 1)
 	go func() {
-		if err := controller.NewServer(dataLayer).Router.Run(fmt.Sprintf(":%d", PORT)); !errors.Is(err, http.ErrServerClosed) {
+		if err = server.Router.Run(fmt.Sprintf(":%d", PORT)); !errors.Is(err, http.ErrServerClosed) {
 			serverError <- err
 		}
 	}()
