@@ -1,13 +1,13 @@
 package controller
 
 import (
-	"log"
 	consts "music-streaming/consts"
 	"music-streaming/data"
 	types "music-streaming/types"
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -59,8 +59,8 @@ func (s *Server) LoadConfig() error {
 
 	s.config = &config
 
-	log.Printf("Using config file: %s\n", viper.ConfigFileUsed())
-	log.Printf("Loaded config: %+v\n", config)
+	log.Debug().Msgf("Using config file: %s\n", viper.ConfigFileUsed())
+	log.Debug().Msgf("Loaded config: %+v\n", config)
 	return nil
 }
 
@@ -94,7 +94,7 @@ func (s *Server) handlePing(c *gin.Context) {
 }
 
 func (s *Server) MediaScan() {
-	log.Println("Starting Scan")
+	log.Debug().Msgf("Starting Scan")
 
 	mediaCount := make(chan int)
 	done := make(chan struct{})
@@ -108,7 +108,7 @@ func (s *Server) MediaScan() {
 			s.state.count += count
 			s.mu.Unlock()
 		case <-done:
-			log.Println("Finished Scan")
+			log.Debug().Msgf("Finished Scan")
 			s.mu.Lock()
 			s.state.scanning = false
 			s.mu.Unlock()

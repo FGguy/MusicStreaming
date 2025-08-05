@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	auth "music-streaming/util"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type requiredParams struct {
@@ -44,13 +44,13 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 	clientVersion := strings.Split(params.V, ".")
 	clientMajorVersion, err := strconv.Atoi(clientVersion[0])
 	if err != nil {
-		debugLogError("Failed converting subsonic client major version into int", err)
+		log.Warn().Err(err).Msgf("Failed converting subsonic client major version into int")
 		buildAndSendError(c, "0")
 		return
 	}
 	clientMinorVersion, err := strconv.Atoi(clientVersion[1])
 	if err != nil {
-		debugLogError("Failed converting subsonic client minor version into int", err)
+		log.Warn().Err(err).Msgf("Failed converting subsonic client minor version into int")
 		buildAndSendError(c, "0")
 		return
 	}
@@ -80,13 +80,13 @@ func (s *Server) subWithAuth(c *gin.Context) {
 
 	user, err := s.dataLayer.GetUser(ctx, qUser)
 	if err != nil {
-		debugLogError("Failed fetching user for authorization", err)
+		log.Warn().Err(err).Msgf("Failed fetching user for authorization")
 		buildAndSendError(c, "0")
 		return
 	}
 
 	if !auth.ValidatePassword(qHashedPassword, qSalt, user.Password) {
-		debugLog("Wrong Password.")
+		log.Trace().Msg("Login attempt with wrong password")
 		buildAndSendError(c, "40")
 		return
 	}
@@ -129,16 +129,4 @@ func SerializeAndSendBody(c *gin.Context, body any) {
 		return
 	}
 	c.Data(http.StatusOK, contentType, serializedBody)
-}
-
-func debugLog(message string) {
-	if gin.Mode() == gin.DebugMode {
-		log.Print(message)
-	}
-}
-
-func debugLogError(message string, err error) {
-	if gin.Mode() == gin.DebugMode {
-		log.Printf("%s. Error: %s", message, err)
-	}
 }

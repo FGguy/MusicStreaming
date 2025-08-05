@@ -4,7 +4,7 @@ build:
 .PHONY: build
 
 run: build
-	./bin/musicstreaming
+	./bin/musicstreaming -loglevel=info
 
 .PHONY: run
 

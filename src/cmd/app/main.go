@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
-	"log"
 	controller "music-streaming/controller"
 	"music-streaming/data"
 	"net/http"
@@ -13,6 +13,8 @@ import (
 	"syscall"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -20,19 +22,21 @@ const (
 )
 
 func main() {
+	SetupLogging()
+
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal().Msg("Error loading .env file")
 	}
 
 	dataLayer, err := data.New(context.Background())
 	if err != nil {
-		log.Fatalf("Failed initializing data layer. Error: %s", err)
+		log.Fatal().Msgf("Failed initializing data layer. Error: %s", err)
 	}
 	defer dataLayer.Pg_pool.Close()
 
 	server := controller.NewServer(dataLayer)
 	if err = server.LoadConfig(); err != nil {
-		log.Fatalf("Failed loading server configuration file. Error: %s", err)
+		log.Fatal().Msgf("Failed loading server configuration file. Error: %s", err)
 	}
 
 	serverError := make(chan error, 1)
@@ -47,10 +51,38 @@ func main() {
 
 	select {
 	case err := <-serverError:
-		log.Printf("Server error: %v", err)
+		log.Info().Msgf("Server error: %v", err)
 	case sig := <-stop:
-		log.Printf("Received shutdown signal: %v", sig)
+		log.Info().Msgf("Received shutdown signal: %v", sig)
 	}
+}
 
-	//TODO: add graceful shutdown
+func SetupLogging() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+	logLevel := flag.String("loglevel", "info", "Used to set global logging level.")
+	flag.Parse()
+
+	zerolog.SetGlobalLevel(getLogLevel(logLevel))
+
+	log.Info().Msgf("Log level set to %s", *logLevel)
+}
+
+func getLogLevel(level *string) zerolog.Level {
+	switch *level {
+	case "trace":
+		return zerolog.TraceLevel
+	case "debug":
+		return zerolog.DebugLevel
+	case "warn":
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
+	case "panic":
+		return zerolog.PanicLevel
+	default:
+		return zerolog.InfoLevel
+	}
 }

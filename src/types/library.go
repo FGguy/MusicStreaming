@@ -34,12 +34,13 @@ type Song struct {
 	Title       string
 	Album       string
 	Artist      string
+	Genre       string
 	IsDir       bool
 	CoverArt    string
 	Created     string
 	Duration    int
 	BitRate     int
-	Size        int
+	Size        int64
 	Suffix      string
 	ContentType string
 	IsVideo     bool

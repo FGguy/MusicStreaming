@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 // GET
@@ -122,7 +123,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 	}
 
 	if err := s.dataLayer.CreateUser(ctx, userParams); err != nil {
-		debugLogError("Failed to create user", err)
+		log.Error().Err(err).Msgf("Failed to create user")
 		buildAndSendError(c, "0")
 		return
 	}
@@ -145,7 +146,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	)
 
 	if username == "" {
-		debugLog("Failed getting user from params")
+		log.Error().Msg("Failed getting user from params")
 		buildAndSendError(c, "10")
 		return
 	}
@@ -186,7 +187,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 	//if no valid updates abort
 	if len(userUpdates) >= 1 {
 		if err := s.dataLayer.UpdateUser(ctx, username, userUpdates); err != nil {
-			debugLogError("Failed to create user", err)
+			log.Error().Err(err).Msgf("Failed to update user")
 			buildAndSendError(c, "0")
 			return
 		}
@@ -215,7 +216,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 	}
 
 	if username == "" {
-		debugLog("Failed to get username from url-encoded post form parameters")
+		log.Warn().Msgf("Failed to get username from url-encoded post form parameters")
 		buildAndSendError(c, "10")
 		return
 	}
