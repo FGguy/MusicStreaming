@@ -18,6 +18,7 @@ import (
 
 type DataLayer interface {
 	SQLUserManagement
+	SQLBrowsing
 	MediaScan(musicFolders []string, count chan<- int, done chan<- struct{})
 }
 

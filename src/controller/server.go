@@ -80,6 +80,11 @@ func (s *Server) mountHandlers() {
 		//Media library scanning
 		api.GET("/getScanStatus", s.handleGetScanStatus)
 		api.GET("/startScan", s.handleStartScan)
+
+		//browsing
+		api.GET("/getArtist", s.handleGetArtist)
+		api.GET("/getAlbum", s.handleGetAlbum)
+		api.GET("/getSong", s.handleGetSong)
 	}
 }
 

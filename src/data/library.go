@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (d *DataLayerPg) exportArtistTree(ctx context.Context, artist *types.Artist) error {
+func (d *DataLayerPg) exportArtistTree(ctx context.Context, artist *types.ScanArtist) error {
 	conn, err := d.Pg_pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (d *DataLayerPg) exportArtistTree(ctx context.Context, artist *types.Artist
 	return nil
 }
 
-func exportSongs(ctx context.Context, q *sqlc.Queries, albumId int32, songs []*types.Song) error {
+func exportSongs(ctx context.Context, q *sqlc.Queries, albumId int32, songs []*types.ScanSong) error {
 	for _, song := range songs {
 		s := sqlc.CreateSongParams{
 			AlbumID:     pgtype.Int4{Int32: albumId, Valid: true},

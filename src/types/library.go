@@ -1,28 +1,28 @@
 package types
 
-type Artist struct {
+type ScanArtist struct {
 	Name     string
 	CoverArt string
-	Albums   []*Album
+	Albums   []*ScanAlbum
 }
 
-func (a *Artist) GetAlbumCount() int {
+func (a *ScanArtist) GetAlbumCount() int {
 	return len(a.Albums)
 }
 
-type Album struct {
+type ScanAlbum struct {
 	Name     string
 	CoverArt string
 	Created  string
 	Artist   string
-	Songs    []*Song
+	Songs    []*ScanSong
 }
 
-func (a *Album) GetSongCount() int {
+func (a *ScanAlbum) GetSongCount() int {
 	return len(a.Songs)
 }
 
-func (a *Album) GetDuration() int {
+func (a *ScanAlbum) GetDuration() int {
 	duration := 0
 	for _, s := range a.Songs {
 		duration += s.Duration
@@ -30,7 +30,7 @@ func (a *Album) GetDuration() int {
 	return duration
 }
 
-type Song struct {
+type ScanSong struct {
 	Title       string
 	Album       string
 	Artist      string

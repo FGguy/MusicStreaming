@@ -15,6 +15,9 @@ type SubsonicResponse struct {
 	User       *SubsonicUser       `xml:"user,omitempty" json:"user,omitempty"`
 	ScanStatus *SubsonicScanStatus `xml:"scanStatus,omitempty" json:"scanStatus,omitempty"`
 	Users      []*SubsonicUser     `xml:"users,omitempty" json:"users,omitempty"`
+	Artist     *Artist             `xml:"artist,omitempty" json:"artist,omitempty"`
+	Album      *Album              `xml:"album,omitempty" json:"album,omitempty"`
+	Song       *Song               `xml:"song,omitempty" json:"song,omitempty"`
 }
 
 type SubsonicError struct {

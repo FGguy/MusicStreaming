@@ -32,10 +32,10 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 			return
 		}
 
-		var artists []*types.Artist
+		var artists []*types.ScanArtist
 		for _, artist := range entries {
 			if artist.IsDir() {
-				a := &types.Artist{
+				a := &types.ScanArtist{
 					Name:     artist.Name(),
 					CoverArt: "",
 				}
@@ -51,10 +51,10 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 				return
 			}
 
-			var albums []*types.Album
+			var albums []*types.ScanAlbum
 			for _, album := range entries {
 				if album.IsDir() {
-					a := &types.Album{
+					a := &types.ScanAlbum{
 						Name:     album.Name(),
 						CoverArt: "",
 						Artist:   artist.Name,
@@ -71,7 +71,7 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 					return
 				}
 
-				var songs []*types.Song
+				var songs []*types.ScanSong
 				for _, song := range entries {
 					if !song.IsDir() {
 						info, err := os.Stat(path.Join(albumDir, song.Name()))
@@ -79,7 +79,7 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 							log.Error().Err(err)
 							return
 						}
-						s := &types.Song{
+						s := &types.ScanSong{
 							Title:       song.Name(),
 							Album:       album.Name,
 							Artist:      artist.Name,
