@@ -12,8 +12,8 @@ import (
 )
 
 const createSong = `-- name: CreateSong :one
-INSERT INTO Songs (album_id, title, album, artist, is_dir, cover_art, created, duration, bit_rate, size, suffix, content_type, is_video)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING song_id, album_id, title, album, artist, is_dir, cover_art, created, duration, bit_rate, size, suffix, content_type, is_video, path
+INSERT INTO Songs (album_id, title, album, artist, is_dir, cover_art, created, duration, bit_rate, size, suffix, content_type, is_video, path)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING song_id, album_id, title, album, artist, is_dir, cover_art, created, duration, bit_rate, size, suffix, content_type, is_video, path
 `
 
 type CreateSongParams struct {
@@ -30,6 +30,7 @@ type CreateSongParams struct {
 	Suffix      pgtype.Text
 	ContentType pgtype.Text
 	IsVideo     pgtype.Bool
+	Path        string
 }
 
 func (q *Queries) CreateSong(ctx context.Context, arg CreateSongParams) (Song, error) {
@@ -47,6 +48,7 @@ func (q *Queries) CreateSong(ctx context.Context, arg CreateSongParams) (Song, e
 		arg.Suffix,
 		arg.ContentType,
 		arg.IsVideo,
+		arg.Path,
 	)
 	var i Song
 	err := row.Scan(

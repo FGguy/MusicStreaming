@@ -1,23 +1,17 @@
 package data
 
 import (
-	"io"
-	"log"
+	"context"
 	"music-streaming/types"
 	"os"
 	"path"
-	"syscall"
-	"time"
 
-	"github.com/dhowden/tag"
-	"github.com/gabriel-vasile/mimetype"
-	"github.com/tcolgate/mp3"
+	"github.com/rs/zerolog/log"
 )
 
 /*
 	TODO: create table for cover art, detect and create cover art entries
 	TODO: get song file metadata
-	TODO: export to sql
 */
 
 func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done chan<- struct{}) {
@@ -28,6 +22,8 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 	if len(musicFolders) < 1 {
 		log.Print("no top music folders provided")
 	}
+
+	ctx := context.Background()
 
 	for _, topDir := range musicFolders {
 		entries, err := os.ReadDir(topDir)
@@ -78,10 +74,24 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 				var songs []*types.Song
 				for _, song := range entries {
 					if !song.IsDir() {
-						s, err := readInfoFromFile(path.Join(albumDir, song.Name()))
+						info, err := os.Stat(path.Join(albumDir, song.Name()))
 						if err != nil {
-							log.Printf("Failed getting info from song file Error:%s", err)
-							continue
+							log.Error().Err(err)
+							return
+						}
+						s := &types.Song{
+							Title:       song.Name(),
+							Album:       album.Name,
+							Artist:      artist.Name,
+							IsDir:       false,
+							CoverArt:    "",
+							Duration:    0,
+							BitRate:     0,
+							Size:        info.Size(),
+							Suffix:      "",
+							ContentType: "",
+							IsVideo:     false,
+							Path:        path.Join(albumDir, song.Name()),
 						}
 						songs = append(songs, s)
 					}
@@ -91,89 +101,15 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 
 			artist.Albums = albums
 
-			//export artist to sql
-			log.Println(artist.Name)
 			count <- 1 //new artist
 			count <- len(artist.Albums)
 			for _, a := range artist.Albums {
 				count <- len(a.Songs)
-				log.Println(a.Name)
-				for _, s := range a.Songs {
-					log.Println(s)
-				}
+			}
+
+			if err := d.exportArtistTree(ctx, artist); err != nil {
+				log.Error().Err(err).Msg("Failed to export artist")
 			}
 		}
 	}
-}
-
-func readInfoFromFile(path string) (*types.Song, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	mtype, err := mimetype.DetectReader(file)
-	if err != nil {
-		return nil, err
-	}
-
-	m, err := tag.ReadFrom(file)
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := os.Stat(path)
-	if err != nil {
-		return nil, err
-	}
-	var created time.Time
-	stat, ok := info.Sys().(*syscall.Win32FileAttributeData)
-	if !ok {
-		log.Print("Failed to get file information.")
-		created = time.Unix(0, 0)
-	} else {
-		created = time.Unix(0, stat.CreationTime.Nanoseconds())
-	}
-
-	_, err = file.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		duration time.Duration
-	)
-	d := mp3.NewDecoder(file)
-	var frame mp3.Frame
-	skipped := 0
-
-	for {
-		if err := d.Decode(&frame, &skipped); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-		duration += frame.Duration()
-	}
-
-	s := &types.Song{
-		Title:       m.Title(),
-		Album:       m.Album(),
-		Artist:      m.Artist(),
-		Genre:       m.Genre(),
-		IsDir:       false,
-		CoverArt:    "", //TODO
-		Created:     created.String(),
-		Duration:    int(duration.Seconds()), //TODO
-		BitRate:     0,                       //TODO
-		Size:        info.Size(),
-		Suffix:      string(m.FileType()),
-		ContentType: mtype.String(),
-		IsVideo:     false,
-		Path:        path,
-	}
-
-	return s, nil
 }
