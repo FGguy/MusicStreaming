@@ -81,10 +81,14 @@ func (s *Server) mountHandlers() {
 		api.GET("/getScanStatus", s.handleGetScanStatus)
 		api.GET("/startScan", s.handleStartScan)
 
-		//browsing
+		//Browsing
 		api.GET("/getArtist", s.handleGetArtist)
 		api.GET("/getAlbum", s.handleGetAlbum)
 		api.GET("/getSong", s.handleGetSong)
+
+		//Media retrieval
+		api.GET("/download", s.handleDownload)
+		api.GET("/stream", s.handleStream)
 	}
 }
 
