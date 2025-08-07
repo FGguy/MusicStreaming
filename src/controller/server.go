@@ -29,7 +29,7 @@ type Server struct {
 	state *State
 }
 
-func NewServer(dataLayer *data.DataLayerPg) *Server {
+func NewServer(dataLayer *data.DataLayerPg, config *Config) *Server {
 	router := gin.Default()
 	state := &State{scanning: false, count: 0}
 
@@ -37,31 +37,30 @@ func NewServer(dataLayer *data.DataLayerPg) *Server {
 		Router:    router,
 		state:     state,
 		dataLayer: dataLayer,
+		config:    config,
 	}
 	server.mountHandlers()
 
 	return server
 }
 
-func (s *Server) LoadConfig() error {
+func LoadConfig() (*Config, error) {
 	viper.SetConfigName("musicstreaming")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 
 	if err := viper.ReadInConfig(); err != nil {
-		return err
+		return nil, err
 	}
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
-		return err
+		return nil, err
 	}
-
-	s.config = &config
 
 	log.Debug().Msgf("Using config file: %s\n", viper.ConfigFileUsed())
 	log.Debug().Msgf("Loaded config: %+v\n", config)
-	return nil
+	return &config, nil
 }
 
 func (s *Server) mountHandlers() {

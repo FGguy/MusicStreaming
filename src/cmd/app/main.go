@@ -34,10 +34,12 @@ func main() {
 	}
 	defer dataLayer.Pg_pool.Close()
 
-	server := controller.NewServer(dataLayer)
-	if err = server.LoadConfig(); err != nil {
+	config, err := controller.LoadConfig()
+	if err != nil {
 		log.Fatal().Msgf("Failed loading server configuration file. Error: %s", err)
 	}
+
+	server := controller.NewServer(dataLayer, config)
 
 	serverError := make(chan error, 1)
 	go func() {

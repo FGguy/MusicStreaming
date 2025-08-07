@@ -26,10 +26,12 @@ func TestUserManagementHandlers(t *testing.T) {
 	}
 	defer dataLayer.Pg_pool.Close()
 
-	server := NewServer(dataLayer)
-	if err = server.LoadConfig(); err != nil {
-		t.Fatalf("Failed initializing data layer. Error: %s", err)
+	config, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("Failed loading server configuration file. Error: %s", err)
 	}
+	server := NewServer(dataLayer, config)
+
 	ts := httptest.NewServer(server.Router)
 	defer ts.Close()
 
