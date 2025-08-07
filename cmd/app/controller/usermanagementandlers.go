@@ -33,6 +33,7 @@ func (s *Application) hangleGetUser(c *gin.Context) {
 
 	user, err := s.dataLayer.GetUser(ctx, username)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed fetching user")
 		buildAndSendError(c, "0")
 		return
 	}
@@ -61,6 +62,7 @@ func (s *Application) hangleGetUsers(c *gin.Context) {
 
 	users, err := s.dataLayer.GetUsers(ctx)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed fetching users")
 		buildAndSendError(c, "0")
 		return
 	}
@@ -222,6 +224,7 @@ func (s *Application) handleDeleteUser(c *gin.Context) {
 	}
 
 	if err := s.dataLayer.DeleteUser(ctx, username); err != nil {
+		log.Error().Err(err).Msg("Failed deleting user")
 		buildAndSendError(c, "0")
 		return
 	}
@@ -260,6 +263,7 @@ func (s *Application) handleChangePassword(c *gin.Context) {
 	}
 
 	if err := s.dataLayer.ChangeUserPassword(ctx, username, password); err != nil {
+		log.Error().Err(err).Msg("Failed changing user's password")
 		buildAndSendError(c, "0")
 		return
 	}

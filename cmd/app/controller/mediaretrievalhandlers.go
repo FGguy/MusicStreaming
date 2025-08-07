@@ -74,5 +74,6 @@ func (s *Application) handleStream(c *gin.Context) {
 		return
 	}
 
+	log.Info().Msgf("Streaming song: %s, to user: %s", song.Title, rUser.Username)
 	c.File(song.Path)
 }

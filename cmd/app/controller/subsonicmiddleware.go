@@ -31,6 +31,7 @@ func (s *Application) subValidateQParamsMiddleware(c *gin.Context) {
 
 	var params requiredParams
 	if err := c.ShouldBindQuery(&params); err != nil {
+		log.Debug().Err(err)
 		buildAndSendError(c, "10")
 		return
 	}
@@ -125,6 +126,7 @@ func SerializeAndSendBody(c *gin.Context, body any) {
 	}
 
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to serialize response")
 		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}
