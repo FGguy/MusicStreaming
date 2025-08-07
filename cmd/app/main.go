@@ -5,12 +5,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	controller "music-streaming/controller"
-	"music-streaming/data"
+	controller "music-streaming/cmd/app/controller"
+	"music-streaming/internal/data"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
@@ -39,11 +40,18 @@ func main() {
 		log.Fatal().Msgf("Failed loading server configuration file. Error: %s", err)
 	}
 
-	server := controller.NewServer(dataLayer, config)
+	app := controller.NewApplication(dataLayer, config)
+
+	srv := &http.Server{
+		Addr:           fmt.Sprintf(":%d", PORT),
+		Handler:        app.Router,
+		MaxHeaderBytes: 4 * 1024,
+		ReadTimeout:    5 * time.Second,
+	}
 
 	serverError := make(chan error, 1)
 	go func() {
-		if err = server.Router.Run(fmt.Sprintf(":%d", PORT)); !errors.Is(err, http.ErrServerClosed) {
+		if err = srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			serverError <- err
 		}
 	}()

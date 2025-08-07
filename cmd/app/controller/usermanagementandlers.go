@@ -3,8 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
-	consts "music-streaming/consts"
-	types "music-streaming/types"
+	consts "music-streaming/internal/consts"
+	types "music-streaming/internal/types"
 	"slices"
 	"strconv"
 	"strings"
@@ -14,7 +14,7 @@ import (
 )
 
 // GET
-func (s *Server) hangleGetUser(c *gin.Context) {
+func (s *Application) hangleGetUser(c *gin.Context) {
 	var (
 		rUser    = c.MustGet("requestingUser").(*types.SubsonicUser)
 		username = c.Query("username")
@@ -50,7 +50,7 @@ func (s *Server) hangleGetUser(c *gin.Context) {
 }
 
 // GET
-func (s *Server) hangleGetUsers(c *gin.Context) {
+func (s *Application) hangleGetUsers(c *gin.Context) {
 	rUser := c.MustGet("requestingUser").(*types.SubsonicUser)
 	ctx := context.Background()
 
@@ -76,7 +76,7 @@ func (s *Server) hangleGetUsers(c *gin.Context) {
 }
 
 // POST
-func (s *Server) handleCreateUser(c *gin.Context) {
+func (s *Application) handleCreateUser(c *gin.Context) {
 	rUser := c.MustGet("requestingUser").(*types.SubsonicUser)
 	ctx := context.Background()
 
@@ -138,7 +138,7 @@ func (s *Server) handleCreateUser(c *gin.Context) {
 }
 
 // POST
-func (s *Server) handleUpdateUser(c *gin.Context) {
+func (s *Application) handleUpdateUser(c *gin.Context) {
 	var (
 		rUser    = c.MustGet("requestingUser").(*types.SubsonicUser)
 		username = c.PostForm("username")
@@ -203,7 +203,7 @@ func (s *Server) handleUpdateUser(c *gin.Context) {
 }
 
 // POST
-func (s *Server) handleDeleteUser(c *gin.Context) {
+func (s *Application) handleDeleteUser(c *gin.Context) {
 	var (
 		rUser    = c.MustGet("requestingUser").(*types.SubsonicUser)
 		username = c.PostForm("username")
@@ -236,7 +236,7 @@ func (s *Server) handleDeleteUser(c *gin.Context) {
 }
 
 // POST
-func (s *Server) handleChangePassword(c *gin.Context) {
+func (s *Application) handleChangePassword(c *gin.Context) {
 	var (
 		rUser    = c.MustGet("requestingUser").(*types.SubsonicUser)
 		username = c.PostForm("username")

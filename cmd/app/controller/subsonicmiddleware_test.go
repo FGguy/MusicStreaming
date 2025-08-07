@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	consts "music-streaming/consts"
-	"music-streaming/data"
+	consts "music-streaming/internal/consts"
+	"music-streaming/internal/data"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -70,9 +70,9 @@ func TestSubsonicMiddleware(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed loading server configuration file. Error: %s", err)
 	}
-	server := NewServer(dataLayer, config)
+	app := NewApplication(dataLayer, config)
 
-	ts := httptest.NewServer(server.Router)
+	ts := httptest.NewServer(app.Router)
 	defer ts.Close()
 
 	adminName, adminNameDefined := os.LookupEnv("ADMIN_NAME")

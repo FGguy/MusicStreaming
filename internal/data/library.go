@@ -2,8 +2,8 @@ package data
 
 import (
 	"context"
-	sqlc "music-streaming/sql/sqlc"
-	"music-streaming/types"
+	sqlc "music-streaming/internal/sql/sqlc"
+	"music-streaming/internal/types"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )

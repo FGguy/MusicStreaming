@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	consts "music-streaming/consts"
-	types "music-streaming/types"
-	auth "music-streaming/util"
+	consts "music-streaming/internal/consts"
+	types "music-streaming/internal/types"
+	auth "music-streaming/internal/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -26,7 +26,7 @@ type requiredParams struct {
 	P string `form:"p"`
 }
 
-func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
+func (s *Application) subValidateQParamsMiddleware(c *gin.Context) {
 	c.Set("contentType", "application/xml")
 
 	var params requiredParams
@@ -69,7 +69,7 @@ func (s *Server) subValidateQParamsMiddleware(c *gin.Context) {
 	}
 }
 
-func (s *Server) subWithAuth(c *gin.Context) {
+func (s *Application) subWithAuth(c *gin.Context) {
 	var (
 		requiredParams  = c.MustGet("requiredParams").(requiredParams)
 		qUser           = requiredParams.U

@@ -2,15 +2,15 @@ package controller
 
 import (
 	"context"
-	consts "music-streaming/consts"
-	types "music-streaming/types"
+	consts "music-streaming/internal/consts"
+	types "music-streaming/internal/types"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
-func (s *Server) handleGetArtist(c *gin.Context) {
+func (s *Application) handleGetArtist(c *gin.Context) {
 	ctx := context.Background()
 	paramId := c.Query("id")
 	if paramId == "" {
@@ -42,7 +42,7 @@ func (s *Server) handleGetArtist(c *gin.Context) {
 	SerializeAndSendBody(c, subsonicRes)
 }
 
-func (s *Server) handleGetAlbum(c *gin.Context) {
+func (s *Application) handleGetAlbum(c *gin.Context) {
 	ctx := context.Background()
 	paramId := c.Query("id")
 	if paramId == "" {
@@ -74,7 +74,7 @@ func (s *Server) handleGetAlbum(c *gin.Context) {
 	SerializeAndSendBody(c, subsonicRes)
 }
 
-func (s *Server) handleGetSong(c *gin.Context) {
+func (s *Application) handleGetSong(c *gin.Context) {
 	ctx := context.Background()
 	paramId := c.Query("id")
 	if paramId == "" {

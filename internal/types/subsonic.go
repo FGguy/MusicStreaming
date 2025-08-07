@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/xml"
-	sqlc "music-streaming/sql/sqlc"
+	sqlc "music-streaming/internal/sql/sqlc"
 	"strings"
 )
 

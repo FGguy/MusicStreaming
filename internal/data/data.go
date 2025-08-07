@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	sqlc "music-streaming/sql/sqlc"
+	sqlc "music-streaming/internal/sql/sqlc"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"

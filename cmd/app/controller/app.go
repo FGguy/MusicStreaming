@@ -1,9 +1,9 @@
 package controller
 
 import (
-	consts "music-streaming/consts"
-	"music-streaming/data"
-	types "music-streaming/types"
+	consts "music-streaming/internal/consts"
+	"music-streaming/internal/data"
+	types "music-streaming/internal/types"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +20,7 @@ type Config struct {
 	MusicDirectories []string `mapstructure:"music-directories"`
 }
 
-type Server struct {
+type Application struct {
 	Router    *gin.Engine
 	config    *Config
 	dataLayer data.DataLayer
@@ -29,19 +29,19 @@ type Server struct {
 	state *State
 }
 
-func NewServer(dataLayer *data.DataLayerPg, config *Config) *Server {
+func NewApplication(dataLayer *data.DataLayerPg, config *Config) *Application {
 	router := gin.Default()
 	state := &State{scanning: false, count: 0}
 
-	server := &Server{
+	app := &Application{
 		Router:    router,
 		state:     state,
 		dataLayer: dataLayer,
 		config:    config,
 	}
-	server.mountHandlers()
+	app.mountHandlers()
 
-	return server
+	return app
 }
 
 func LoadConfig() (*Config, error) {
@@ -63,7 +63,7 @@ func LoadConfig() (*Config, error) {
 	return &config, nil
 }
 
-func (s *Server) mountHandlers() {
+func (s *Application) mountHandlers() {
 	api := s.Router.Group("/rest", s.subValidateQParamsMiddleware, s.subWithAuth)
 	{
 		api.GET("/ping", s.handlePing)
@@ -91,7 +91,7 @@ func (s *Server) mountHandlers() {
 	}
 }
 
-func (s *Server) handlePing(c *gin.Context) {
+func (s *Application) handlePing(c *gin.Context) {
 	subsonicRes := types.SubsonicResponse{
 		Xmlns:   consts.Xmlns,
 		Status:  "ok",
@@ -101,7 +101,7 @@ func (s *Server) handlePing(c *gin.Context) {
 	SerializeAndSendBody(c, subsonicRes)
 }
 
-func (s *Server) MediaScan() {
+func (s *Application) MediaScan() {
 	log.Debug().Msgf("Starting Scan")
 
 	mediaCount := make(chan int)

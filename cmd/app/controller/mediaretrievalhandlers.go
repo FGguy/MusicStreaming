@@ -2,14 +2,14 @@ package controller
 
 import (
 	"context"
-	types "music-streaming/types"
+	types "music-streaming/internal/types"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
-func (s *Server) handleDownload(c *gin.Context) {
+func (s *Application) handleDownload(c *gin.Context) {
 	var (
 		rUser   = c.MustGet("requestingUser").(*types.SubsonicUser)
 		ctx     = context.Background()
@@ -43,7 +43,7 @@ func (s *Server) handleDownload(c *gin.Context) {
 	c.FileAttachment(song.Path, song.Title)
 }
 
-func (s *Server) handleStream(c *gin.Context) {
+func (s *Application) handleStream(c *gin.Context) {
 	var (
 		rUser   = c.MustGet("requestingUser").(*types.SubsonicUser)
 		ctx     = context.Background()

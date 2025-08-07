@@ -2,7 +2,7 @@ package data
 
 import (
 	"context"
-	"music-streaming/types"
+	"music-streaming/internal/types"
 	"os"
 	"path"
 

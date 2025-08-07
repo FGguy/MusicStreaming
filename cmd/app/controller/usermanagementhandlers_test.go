@@ -5,9 +5,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	consts "music-streaming/consts"
-	"music-streaming/data"
-	sqlc "music-streaming/sql/sqlc"
+	consts "music-streaming/internal/consts"
+	"music-streaming/internal/data"
+	sqlc "music-streaming/internal/sql/sqlc"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -30,9 +30,9 @@ func TestUserManagementHandlers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed loading server configuration file. Error: %s", err)
 	}
-	server := NewServer(dataLayer, config)
+	app := NewApplication(dataLayer, config)
 
-	ts := httptest.NewServer(server.Router)
+	ts := httptest.NewServer(app.Router)
 	defer ts.Close()
 
 	adminName, adminNameDefined := os.LookupEnv("ADMIN_NAME")

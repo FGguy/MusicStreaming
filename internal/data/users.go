@@ -3,8 +3,8 @@ package data
 import (
 	"context"
 	"encoding/json"
-	sqlc "music-streaming/sql/sqlc"
-	"music-streaming/types"
+	sqlc "music-streaming/internal/sql/sqlc"
+	"music-streaming/internal/types"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"

@@ -1,14 +1,14 @@
 package controller
 
 import (
-	consts "music-streaming/consts"
-	types "music-streaming/types"
+	consts "music-streaming/internal/consts"
+	types "music-streaming/internal/types"
 
 	"github.com/gin-gonic/gin"
 )
 
 // GET
-func (s *Server) handleGetScanStatus(c *gin.Context) {
+func (s *Application) handleGetScanStatus(c *gin.Context) {
 	s.mu.Lock()
 	scanStatus := &types.SubsonicScanStatus{
 		Scanning: s.state.scanning,
@@ -27,7 +27,7 @@ func (s *Server) handleGetScanStatus(c *gin.Context) {
 }
 
 // GET
-func (s *Server) handleStartScan(c *gin.Context) {
+func (s *Application) handleStartScan(c *gin.Context) {
 	rUser := c.MustGet("requestingUser").(*types.SubsonicUser)
 	if !rUser.AdminRole {
 		buildAndSendError(c, "50")
