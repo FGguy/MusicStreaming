@@ -18,7 +18,7 @@ func (s *Application) hangleGetUser(c *gin.Context) {
 	var (
 		rUser    = c.MustGet("requestingUser").(*types.SubsonicUser)
 		username = c.Query("username")
-		ctx      = context.Background()
+		ctx      = c.Request.Context()
 	)
 
 	if username == "" {
@@ -53,7 +53,7 @@ func (s *Application) hangleGetUser(c *gin.Context) {
 // GET
 func (s *Application) hangleGetUsers(c *gin.Context) {
 	rUser := c.MustGet("requestingUser").(*types.SubsonicUser)
-	ctx := context.Background()
+	ctx := c.Request.Context()
 
 	if !rUser.AdminRole {
 		buildAndSendError(c, "50")

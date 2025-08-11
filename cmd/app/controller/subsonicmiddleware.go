@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
@@ -76,7 +75,7 @@ func (s *Application) subWithAuth(c *gin.Context) {
 		qUser           = requiredParams.U
 		qHashedPassword = requiredParams.T
 		qSalt           = requiredParams.S
-		ctx             = context.Background()
+		ctx             = c.Request.Context()
 	)
 
 	user, err := s.dataLayer.GetUser(ctx, qUser)

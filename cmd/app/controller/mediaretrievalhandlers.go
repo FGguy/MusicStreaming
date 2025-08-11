@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	types "music-streaming/internal/types"
 	"strconv"
 
@@ -12,7 +11,7 @@ import (
 func (s *Application) handleDownload(c *gin.Context) {
 	var (
 		rUser   = c.MustGet("requestingUser").(*types.SubsonicUser)
-		ctx     = context.Background()
+		ctx     = c.Request.Context()
 		paramId = c.Query("id")
 	)
 
@@ -46,7 +45,7 @@ func (s *Application) handleDownload(c *gin.Context) {
 func (s *Application) handleStream(c *gin.Context) {
 	var (
 		rUser   = c.MustGet("requestingUser").(*types.SubsonicUser)
-		ctx     = context.Background()
+		ctx     = c.Request.Context()
 		paramId = c.Query("id")
 	)
 

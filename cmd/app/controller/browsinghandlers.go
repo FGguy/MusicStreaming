@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	consts "music-streaming/internal/consts"
 	types "music-streaming/internal/types"
 	"strconv"
@@ -11,7 +10,7 @@ import (
 )
 
 func (s *Application) handleGetArtist(c *gin.Context) {
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	paramId := c.Query("id")
 	if paramId == "" {
 		buildAndSendError(c, "10")
@@ -43,7 +42,7 @@ func (s *Application) handleGetArtist(c *gin.Context) {
 }
 
 func (s *Application) handleGetAlbum(c *gin.Context) {
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	paramId := c.Query("id")
 	if paramId == "" {
 		buildAndSendError(c, "10")
@@ -75,7 +74,7 @@ func (s *Application) handleGetAlbum(c *gin.Context) {
 }
 
 func (s *Application) handleGetSong(c *gin.Context) {
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	paramId := c.Query("id")
 	if paramId == "" {
 		buildAndSendError(c, "10")
