@@ -18,6 +18,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type HttpTestCase struct {
+	Name     string
+	Req      string
+	FormBody string
+	Expected string
+	Status   int
+}
+
 func assertGetRequest(t *testing.T, req string, expectedStatus int, expectedBody string) {
 	resp, err := http.Get(req)
 	if err != nil {
@@ -51,7 +59,7 @@ func assertPostRequest(t *testing.T, req string, formBody string, expectedStatus
 }
 
 func TestSubsonicMiddleware(t *testing.T) {
-	err := os.Chdir("..")
+	err := os.Chdir("../../..")
 	if err != nil {
 		t.Fatalf("Failed to change working directory: %v", err)
 	}
@@ -85,35 +93,48 @@ func TestSubsonicMiddleware(t *testing.T) {
 	hashedPasswordHex := hex.EncodeToString(hashedPassword[:])
 	baseURL := ts.URL + "/rest/ping"
 
-	t.Run("Should return an error for missing required parameter.", func(t *testing.T) {
-		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s", baseURL, adminName, hashedPasswordHex, salt, consts.SubsonicVersion)
-		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="10" message="Required parameter is missing."></error></subsonic-response>`
-		assertGetRequest(t, req, 200, expected)
-	})
+	testCases := []HttpTestCase{
+		{
+			Name:     "Should return an error for missing required parameter.",
+			Req:      fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s", baseURL, adminName, hashedPasswordHex, salt, consts.SubsonicVersion),
+			Expected: `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="10" message="Required parameter is missing."></error></subsonic-response>`,
+			Status:   http.StatusOK,
+		},
+		{
+			Name:     "Should return an error for invalid incompatible client and server versions (server must upgrade).",
+			Req:      fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=2.0.0&c=Test", baseURL, adminName, hashedPasswordHex, salt),
+			Expected: `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="30" message="Incompatible Subsonic REST protocol version. Server must upgrade."></error></subsonic-response>`,
+			Status:   http.StatusOK,
+		},
+		{
+			Name:     "Should return an error for invalid incompatible client and server versions (client must upgrade).",
+			Req:      fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=0.0.0&c=Test", baseURL, adminName, hashedPasswordHex, salt),
+			Expected: `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="20" message="Incompatible Subsonic REST protocol version. Client must upgrade."></error></subsonic-response>`,
+			Status:   http.StatusOK,
+		},
+		{
+			Name:     "Should return a empty subsonic-response xml element.",
+			Req:      fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s&c=Test", baseURL, adminName, hashedPasswordHex, salt, consts.SubsonicVersion),
+			Expected: `<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1"></subsonic-response>`,
+			Status:   http.StatusOK,
+		},
+		{
+			Name:     "Should return error for wrong password.",
+			Req:      fmt.Sprintf("%s?u=%s&t=WrongPassword&s=%s&v=%s&c=Test", baseURL, adminName, salt, consts.SubsonicVersion),
+			Expected: `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="40" message="Wrong username or password."></error></subsonic-response>`,
+			Status:   http.StatusOK,
+		},
+		{
+			Name:     "Should return error for non-existing user.",
+			Req:      fmt.Sprintf("%s?u=NonExistingUser&t=%s&s=%s&v=%s&c=Test", baseURL, hashedPasswordHex, salt, consts.SubsonicVersion),
+			Expected: `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="0" message="A generic error."></error></subsonic-response>`,
+			Status:   http.StatusOK,
+		},
+	}
 
-	t.Run("Should return an error for invalid incompatible client and server versions.", func(t *testing.T) {
-		req1 := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=2.0.0&c=Test", baseURL, adminName, hashedPasswordHex, salt)
-		expected1 := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="30" message="Incompatible Subsonic REST protocol version. Server must upgrade."></error></subsonic-response>`
-		assertGetRequest(t, req1, 200, expected1)
-
-		req2 := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=0.0.0&c=Test", baseURL, adminName, hashedPasswordHex, salt)
-		expected2 := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="20" message="Incompatible Subsonic REST protocol version. Client must upgrade."></error></subsonic-response>`
-		assertGetRequest(t, req2, 200, expected2)
-	})
-
-	t.Run("Should return a empty subsonic-response xml element.", func(t *testing.T) {
-		req := fmt.Sprintf("%s?u=%s&t=%s&s=%s&v=%s&c=Test", baseURL, adminName, hashedPasswordHex, salt, consts.SubsonicVersion)
-		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="ok" version="1.16.1"></subsonic-response>`
-		assertGetRequest(t, req, 200, expected)
-	})
-
-	t.Run("Should return error for wrong username or password.", func(t *testing.T) {
-		req1 := fmt.Sprintf("%s?u=%s&t=WrongPassword&s=%s&v=%s&c=Test", baseURL, adminName, salt, consts.SubsonicVersion)
-		expected := `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="40" message="Wrong username or password."></error></subsonic-response>`
-		assertGetRequest(t, req1, 200, expected)
-
-		expected = `<subsonic-response xmlns="http://subsonic.org/restapi" status="failed" version="1.16.1"><error code="0" message="A generic error."></error></subsonic-response>`
-		req2 := fmt.Sprintf("%s?u=NonExistingUser&t=%s&s=%s&v=%s&c=Test", baseURL, hashedPasswordHex, salt, consts.SubsonicVersion)
-		assertGetRequest(t, req2, 200, expected)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			assertGetRequest(t, tc.Req, tc.Status, tc.Expected)
+		})
+	}
 }
