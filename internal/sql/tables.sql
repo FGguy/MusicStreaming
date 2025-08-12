@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS Users (
 CREATE INDEX IF NOT EXISTS idx_users_username
 ON Users(username);
 
+CREATE TABLE IF NOT EXISTS Covers(
+    cover_id TEXT,
+    path TEXT NOT NULL,
+    PRIMARY KEY(cover_id)
+);
+
 CREATE TABLE IF NOT EXISTS Artists (
     artist_id SERIAL,
     name TEXT NOT NULL,

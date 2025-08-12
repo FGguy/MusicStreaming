@@ -2,6 +2,9 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	sqlc "music-streaming/internal/sql/sqlc"
 	"music-streaming/internal/types"
 	"music-streaming/internal/util"
 	"os"
@@ -38,9 +41,16 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 		var artists []*types.ScanArtist
 		for _, artist := range entries {
 			if artist.IsDir() {
+				coverId, CoverPath := detectCover(path.Join(topDir, artist.Name()))
 				a := &types.ScanArtist{
 					Name:     artist.Name(),
-					CoverArt: "",
+					CoverArt: coverId,
+				}
+				if coverId != "" {
+					log.Trace().Msgf("Exporting %s", coverId)
+					if err := d.CreateCover(ctx, coverId, CoverPath); err != nil {
+						log.Error().Err(err).Msg("Failed to create cover art in database")
+					}
 				}
 				artists = append(artists, a)
 			}
@@ -58,10 +68,17 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 			var albums []*types.ScanAlbum
 			for _, album := range entries {
 				if album.IsDir() {
+					coverId, CoverPath := detectCover(path.Join(artistDir, album.Name()))
 					a := &types.ScanAlbum{
 						Name:     album.Name(),
-						CoverArt: "",
+						CoverArt: coverId,
 						Artist:   artist.Name,
+					}
+					if coverId != "" {
+						log.Trace().Msgf("Exporting %s", coverId)
+						if err := d.CreateCover(ctx, coverId, CoverPath); err != nil {
+							log.Error().Err(err).Msg("Failed to create cover art in database")
+						}
 					}
 					albums = append(albums, a)
 				}
@@ -139,6 +156,23 @@ func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done ch
 	}
 }
 
+var validCoverFormats = []string{
+	"cover.jpg", "cover.jpeg", "cover.png",
+}
+
+func detectCover(topPath string) (cover_id string, cover_path string) {
+	for _, format := range validCoverFormats {
+		cover_path := path.Join(topPath, format)
+		_, err := os.Stat(cover_path)
+		if err == nil {
+			h := sha256.New()
+			h.Write([]byte(cover_path))
+			return hex.EncodeToString(h.Sum(nil))[0:16], cover_path
+		}
+	}
+	return "", ""
+}
+
 func getContentType(formatName string) string {
 	switch strings.ToLower(formatName) {
 	case "mp3":
@@ -158,4 +192,23 @@ func getContentType(formatName string) string {
 	default:
 		return "audio/mpeg" // Default fallback
 	}
+}
+
+func (d *DataLayerPg) CreateCover(ctx context.Context, id string, path string) error {
+	conn, err := d.Pg_pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	q := sqlc.New(conn)
+
+	c := sqlc.CreateCoverParams{
+		CoverID: id,
+		Path:    path,
+	}
+
+	if _, err := q.CreateCover(ctx, c); err != nil {
+		return err
+	}
+	return nil
 }

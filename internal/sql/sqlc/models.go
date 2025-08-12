@@ -26,6 +26,11 @@ type Artist struct {
 	AlbumCount pgtype.Int4
 }
 
+type Cover struct {
+	CoverID string
+	Path    string
+}
+
 type Song struct {
 	SongID      int32
 	AlbumID     pgtype.Int4
