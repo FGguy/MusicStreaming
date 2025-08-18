@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	sqlc "music-streaming/internal/sql/sqlc"
+	"music-streaming/internal/types"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,6 +21,7 @@ type DataLayer interface {
 	SQLUserManagement
 	SQLBrowsing
 	MediaScan(musicFolders []string, count chan<- int, done chan<- struct{})
+	GetCover(ctx context.Context, id string) (*types.Cover, error)
 }
 
 type DataLayerPg struct {

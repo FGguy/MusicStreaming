@@ -88,6 +88,7 @@ func (s *Application) mountHandlers() {
 		//Media retrieval
 		api.GET("/download", s.handleDownload)
 		api.GET("/stream", s.handleStream)
+		api.GET("/getCoverArt", s.handleGetCoverArt)
 	}
 }
 

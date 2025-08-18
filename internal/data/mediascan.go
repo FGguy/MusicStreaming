@@ -15,10 +15,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-/*
-	TODO: create table for cover art, detect and create cover art entries
-*/
-
 func (d *DataLayerPg) MediaScan(musicFolders []string, count chan<- int, done chan<- struct{}) {
 	defer func() {
 		done <- struct{}{}
@@ -211,4 +207,23 @@ func (d *DataLayerPg) CreateCover(ctx context.Context, id string, path string) e
 		return err
 	}
 	return nil
+}
+
+func (d *DataLayerPg) GetCover(ctx context.Context, id string) (*types.Cover, error) {
+	conn, err := d.Pg_pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	q := sqlc.New(conn)
+
+	cover, err := q.GetCover(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.Cover{
+		Id:   cover.CoverID,
+		Path: cover.Path,
+	}, nil
 }

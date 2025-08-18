@@ -35,3 +35,8 @@ type Song struct {
 	IsVideo     bool   `json:"isVideo" xml:"isVideo"`
 	Path        string `json:"path" xml:"path"`
 }
+
+type Cover struct {
+	Id   string
+	Path string
+}

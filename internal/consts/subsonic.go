@@ -26,6 +26,12 @@ var (
 		"320",
 	}
 
+	SubsonicValidFileFormats = []string{
+		"mp3",
+		"flac",
+		"wav",
+	}
+
 	SubsonicUserRoles = []string{
 		"scrobblingEnabled",
 		"ldapAuthenticated",
