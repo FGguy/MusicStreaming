@@ -1,4 +1,4 @@
-package types
+package domain
 
 type Artist struct {
 	Id         int    `json:"id" xml:"id"`
