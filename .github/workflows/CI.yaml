@@ -1,0 +1,46 @@
+name: MusicStreaming CI
+run-name: Running MusicStreaming CI
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23.0"
+
+      - name: Install dependencies
+        run: make get-dependencies
+
+      - name: Build
+        run: make build
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23.0"
+
+      - name: Install dependencies
+        run: make get-dependencies
+
+      - name: Golangci-lint
+        uses: golangci/golangci-lint-action@v9.2.0
