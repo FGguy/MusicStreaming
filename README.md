@@ -1,8 +1,8 @@
-[![MusicStreaming CI](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml/badge.svg)](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml)
-
 # MusicStreaming
 
-_A self-hosted music streaming platform_
+[![MusicStreaming CI](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml/badge.svg)](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml)
+
+A self-hosted music streaming platform_
 
 ## About
 
