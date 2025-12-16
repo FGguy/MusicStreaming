@@ -16,9 +16,12 @@ type Application struct {
 
 	userManagementHandler *UserManagementHandler
 	userAuthMiddleware    *UserManagementMiddleware
+
+	mediaBrowsingHandler  *MediaBrowsingHandler
+	mediaRetrievalHandler *MediaRetrievalHandler
 }
 
-func NewApplication(config *Config, userManagementHandler *UserManagementHandler, userAuthMiddleware *UserManagementMiddleware) *Application {
+func NewApplication(config *Config, userManagementHandler *UserManagementHandler, userAuthMiddleware *UserManagementMiddleware, mediaBrowsingHandler *MediaBrowsingHandler, mediaRetrievalHandler *MediaRetrievalHandler) *Application {
 	router := gin.Default()
 
 	app := &Application{
@@ -26,6 +29,8 @@ func NewApplication(config *Config, userManagementHandler *UserManagementHandler
 		config:                config,
 		userManagementHandler: userManagementHandler,
 		userAuthMiddleware:    userAuthMiddleware,
+		mediaBrowsingHandler:  mediaBrowsingHandler,
+		mediaRetrievalHandler: mediaRetrievalHandler,
 	}
 	app.mountHandlers()
 
@@ -63,6 +68,16 @@ func (s *Application) mountHandlers() {
 		api.POST("/updateUser", s.userManagementHandler.handleUpdateUser)
 		api.POST("/deleteUser", s.userManagementHandler.handleDeleteUser)
 		api.POST("/changePassword", s.userManagementHandler.handleChangePassword)
+
+		//Media browsing routes
+		api.GET("/getArtist", s.mediaBrowsingHandler.handleGetArtist)
+		api.GET("/getAlbum", s.mediaBrowsingHandler.handleGetAlbum)
+		api.GET("/getSong", s.mediaBrowsingHandler.handleGetSong)
+
+		//Media retrieval routes
+		api.GET("/stream", s.mediaRetrievalHandler.handleStream)
+		api.GET("/download", s.mediaRetrievalHandler.handleDownload)
+		api.GET("/getCoverArt", s.mediaRetrievalHandler.handleGetCoverArt)
 	}
 }
 

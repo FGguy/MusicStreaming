@@ -21,7 +21,7 @@ func (s *UserManagementService) CreateUser(ctx context.Context, user domain.User
 
 	// Permission checking
 	if !ok || requestingUser == nil || !requestingUser.AdminRole {
-		return &ports.UserNotAuthorizedError{Username: requestingUser.Username, Action: "create user"}
+		return &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "create user"}
 	}
 
 	// Parameter validation
@@ -35,7 +35,7 @@ func (s *UserManagementService) CreateUser(ctx context.Context, user domain.User
 func (s *UserManagementService) UpdateUser(ctx context.Context, username string, user domain.User) error {
 	requestingUser, ok := ctx.Value(ports.KeyRequestingUserID).(*domain.User)
 	if !ok || requestingUser == nil || (!requestingUser.AdminRole && !(requestingUser.Username == username && requestingUser.SettingsRole)) {
-		return &ports.UserNotAuthorizedError{Username: requestingUser.Username, Action: "update user"}
+		return &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "update user"}
 	}
 
 	if user.Username == "" || user.Email == "" || user.Password == "" || username == "" {
@@ -48,7 +48,7 @@ func (s *UserManagementService) UpdateUser(ctx context.Context, username string,
 func (s *UserManagementService) DeleteUser(ctx context.Context, username string) error {
 	requestingUser, ok := ctx.Value(ports.KeyRequestingUserID).(*domain.User)
 	if !ok || requestingUser == nil || !requestingUser.AdminRole {
-		return &ports.UserNotAuthorizedError{Username: requestingUser.Username, Action: "delete user"}
+		return &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "delete user"}
 	}
 
 	if username == "" {
@@ -61,7 +61,7 @@ func (s *UserManagementService) DeleteUser(ctx context.Context, username string)
 func (s *UserManagementService) GetUser(ctx context.Context, username string) (domain.User, error) {
 	requestingUser, ok := ctx.Value(ports.KeyRequestingUserID).(*domain.User)
 	if !ok || requestingUser == nil || (!requestingUser.AdminRole && requestingUser.Username != username) {
-		return domain.User{}, &ports.UserNotAuthorizedError{Username: requestingUser.Username, Action: "get user"}
+		return domain.User{}, &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "get user"}
 	}
 
 	if username == "" {
@@ -74,7 +74,7 @@ func (s *UserManagementService) GetUser(ctx context.Context, username string) (d
 func (s *UserManagementService) GetUsers(ctx context.Context) ([]domain.User, error) {
 	requestingUser, ok := ctx.Value(ports.KeyRequestingUserID).(*domain.User)
 	if !ok || requestingUser == nil || !requestingUser.AdminRole {
-		return make([]domain.User, 0), &ports.UserNotAuthorizedError{Username: requestingUser.Username, Action: "get users"}
+		return make([]domain.User, 0), &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "get users"}
 	}
 
 	return s.repo.GetUsers(ctx)
@@ -83,7 +83,7 @@ func (s *UserManagementService) GetUsers(ctx context.Context) ([]domain.User, er
 func (s *UserManagementService) ChangePassword(ctx context.Context, username string, newPassword string) error {
 	requestingUser, ok := ctx.Value(ports.KeyRequestingUserID).(*domain.User)
 	if !ok || requestingUser == nil || (!requestingUser.AdminRole && requestingUser.Username != username) {
-		return &ports.UserNotAuthorizedError{Username: requestingUser.Username, Action: "change password"}
+		return &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "change password"}
 	}
 
 	if username == "" || newPassword == "" {

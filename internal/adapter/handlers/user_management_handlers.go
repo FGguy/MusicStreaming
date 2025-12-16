@@ -28,9 +28,9 @@ func (h *UserManagementHandler) hangleGetUser(c *gin.Context) {
 	user, err := h.userServ.GetUser(ctx, username)
 	if err != nil {
 		switch err.(type) {
-		case *ports.UserNotFoundError:
-			buildAndSendError(c, "0")
-		case *ports.UserNotAuthorizedError:
+		case *ports.NotFoundError:
+			buildAndSendError(c, "70")
+		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
 		case *ports.MissingOrInvalidParameterError:
 			buildAndSendError(c, "10")
@@ -59,7 +59,7 @@ func (h *UserManagementHandler) hangleGetUsers(c *gin.Context) {
 	users, err := h.userServ.GetUsers(ctx)
 	if err != nil {
 		switch err.(type) {
-		case *ports.UserNotAuthorizedError:
+		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
 		}
 		return
@@ -93,7 +93,7 @@ func (h *UserManagementHandler) handleCreateUser(c *gin.Context) {
 
 	if err := h.userServ.CreateUser(ctx, *user); err != nil {
 		switch err.(type) {
-		case *ports.UserNotAuthorizedError:
+		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
 		case *ports.MissingOrInvalidParameterError:
 			buildAndSendError(c, "10")
@@ -128,10 +128,12 @@ func (h *UserManagementHandler) handleUpdateUser(c *gin.Context) {
 	//if no valid updates abort
 	if err := h.userServ.UpdateUser(ctx, username, *user); err != nil {
 		switch err.(type) {
-		case *ports.UserNotAuthorizedError:
+		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
 		case *ports.MissingOrInvalidParameterError:
 			buildAndSendError(c, "10")
+		case *ports.NotFoundError:
+			buildAndSendError(c, "70")
 		default:
 			buildAndSendError(c, "0")
 		}
@@ -156,10 +158,12 @@ func (h *UserManagementHandler) handleDeleteUser(c *gin.Context) {
 
 	if err := h.userServ.DeleteUser(ctx, username); err != nil {
 		switch err.(type) {
-		case *ports.UserNotAuthorizedError:
+		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
 		case *ports.MissingOrInvalidParameterError:
 			buildAndSendError(c, "10")
+		case *ports.NotFoundError:
+			buildAndSendError(c, "70")
 		default:
 			buildAndSendError(c, "0")
 		}
@@ -185,10 +189,12 @@ func (h *UserManagementHandler) handleChangePassword(c *gin.Context) {
 
 	if err := h.userServ.ChangePassword(ctx, username, password); err != nil {
 		switch err.(type) {
-		case *ports.UserNotAuthorizedError:
+		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
 		case *ports.MissingOrInvalidParameterError:
 			buildAndSendError(c, "10")
+		case *ports.NotFoundError:
+			buildAndSendError(c, "70")
 		default:
 			buildAndSendError(c, "0")
 		}
