@@ -1,12 +1,12 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
-	controller "music-streaming/cmd/app/controller"
-	"music-streaming/internal/data"
+	handlers "music-streaming/internal/adapter/handlers"
+	"music-streaming/internal/adapter/repositories"
+	"music-streaming/internal/core/services"
 	"net/http"
 	"os"
 	"os/signal"
@@ -55,20 +55,26 @@ func main() {
 		log.Fatal().Msg("Error loading .env file")
 	}
 
-	//Initialize data layer, ie. connect to databases
-	dataLayer, err := data.New(context.Background())
-	if err != nil {
-		log.Fatal().Msgf("Failed initializing data layer. Error: %s", err)
-	}
-	defer dataLayer.Pg_pool.Close()
-
 	//Load config file
-	config, err := controller.LoadConfig()
+	config, err := handlers.LoadConfig()
 	if err != nil {
 		log.Fatal().Msgf("Failed loading server configuration file. Error: %s", err)
 	}
 
-	app := controller.NewApplication(dataLayer, config)
+	// Setup Dependencies
+
+	// Repositories
+	InMemoryUserManagementRepository := repositories.NewInMemoryUserManagementRepository()
+
+	// Services
+	UserAuthenticationService := services.NewUserAuthenticationService(InMemoryUserManagementRepository)
+	UserManagementService := services.NewUserManagementService(InMemoryUserManagementRepository)
+
+	// Handlers
+	UserManagementHandler := handlers.NewUserManagementHandler(UserManagementService)
+	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService)
+
+	app := handlers.NewApplication(config, UserManagementHandler, UserAuthenticationMiddleware)
 
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%d", PORT),
