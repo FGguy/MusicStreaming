@@ -75,29 +75,23 @@ var (
 )
 
 type SubsonicResponse struct {
-	XMLName    xml.Name            `xml:"subsonic-response" json:"-"`
-	Xmlns      string              `xml:"xmlns,attr" json:"-"`
-	Status     string              `xml:"status,attr" json:"status"`
-	Version    string              `xml:"version,attr" json:"version"`
-	Error      *SubsonicError      `xml:"error,omitempty" json:"error,omitempty"`
-	User       *domain.User        `xml:"user,omitempty" json:"user,omitempty"`
-	ScanStatus *SubsonicScanStatus `xml:"scanStatus,omitempty" json:"scanStatus,omitempty"`
-	Users      *[]domain.User      `xml:"users,omitempty" json:"users,omitempty"`
-	Artist     *domain.Artist      `xml:"artist,omitempty" json:"artist,omitempty"`
-	Album      *domain.Album       `xml:"album,omitempty" json:"album,omitempty"`
-	Song       *domain.Song        `xml:"song,omitempty" json:"song,omitempty"`
+	XMLName    xml.Name           `xml:"subsonic-response" json:"-"`
+	Xmlns      string             `xml:"xmlns,attr" json:"-"`
+	Status     string             `xml:"status,attr" json:"status"`
+	Version    string             `xml:"version,attr" json:"version"`
+	Error      *SubsonicError     `xml:"error,omitempty" json:"error,omitempty"`
+	User       *domain.User       `xml:"user,omitempty" json:"user,omitempty"`
+	ScanStatus *domain.ScanStatus `xml:"scanStatus,omitempty" json:"scanStatus,omitempty"`
+	Users      *[]domain.User     `xml:"users,omitempty" json:"users,omitempty"`
+	Artist     *domain.Artist     `xml:"artist,omitempty" json:"artist,omitempty"`
+	Album      *domain.Album      `xml:"album,omitempty" json:"album,omitempty"`
+	Song       *domain.Song       `xml:"song,omitempty" json:"song,omitempty"`
 }
 
 type SubsonicError struct {
 	XMLName xml.Name `xml:"error,omitempty" json:"-"`
 	Code    string   `xml:"code,attr" json:"code"`
 	Message string   `xml:"message,attr" json:"message"`
-}
-
-type SubsonicScanStatus struct {
-	XMLName  xml.Name `xml:"scanStatus" json:"-"`
-	Scanning bool     `xml:"scanning,attr" json:"scanning"`
-	Count    int      `xml:"count,attr" json:"count"`
 }
 
 type requiredParams struct {

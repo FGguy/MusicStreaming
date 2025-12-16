@@ -73,14 +73,16 @@ func main() {
 	UserManagementService := services.NewUserManagementService(InMemoryUserManagementRepository)
 	MediaBrowsingService := services.NewMediaBrowsingService(InMemoryMediaBrowsingRepository)
 	MediaRetrievalService := services.NewMediaRetrievalService(InMemoryMediaBrowsingRepository)
+	MediaScanningService := services.NewMediaScanningService()
 
 	// Handlers
 	UserManagementHandler := handlers.NewUserManagementHandler(UserManagementService)
 	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService)
 	MediaBrowsingHandler := handlers.NewMediaBrowsingHandler(MediaBrowsingService)
 	MediaRetrievalHandler := handlers.NewMediaRetrievalHandler(MediaRetrievalService)
+	MediaScanningHandler := handlers.NewMediaScanningHandler(MediaScanningService)
 
-	app := handlers.NewApplication(config, UserManagementHandler, UserAuthenticationMiddleware, MediaBrowsingHandler, MediaRetrievalHandler)
+	app := handlers.NewApplication(config, UserManagementHandler, UserAuthenticationMiddleware, MediaBrowsingHandler, MediaRetrievalHandler, MediaScanningHandler)
 
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%d", PORT),

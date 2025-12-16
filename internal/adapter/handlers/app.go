@@ -19,9 +19,10 @@ type Application struct {
 
 	mediaBrowsingHandler  *MediaBrowsingHandler
 	mediaRetrievalHandler *MediaRetrievalHandler
+	mediaScanningHandler  *MediaScanningHandler
 }
 
-func NewApplication(config *Config, userManagementHandler *UserManagementHandler, userAuthMiddleware *UserManagementMiddleware, mediaBrowsingHandler *MediaBrowsingHandler, mediaRetrievalHandler *MediaRetrievalHandler) *Application {
+func NewApplication(config *Config, userManagementHandler *UserManagementHandler, userAuthMiddleware *UserManagementMiddleware, mediaBrowsingHandler *MediaBrowsingHandler, mediaRetrievalHandler *MediaRetrievalHandler, mediaScanningHandler *MediaScanningHandler) *Application {
 	router := gin.Default()
 
 	app := &Application{
@@ -31,6 +32,7 @@ func NewApplication(config *Config, userManagementHandler *UserManagementHandler
 		userAuthMiddleware:    userAuthMiddleware,
 		mediaBrowsingHandler:  mediaBrowsingHandler,
 		mediaRetrievalHandler: mediaRetrievalHandler,
+		mediaScanningHandler:  mediaScanningHandler,
 	}
 	app.mountHandlers()
 
@@ -78,6 +80,10 @@ func (s *Application) mountHandlers() {
 		api.GET("/stream", s.mediaRetrievalHandler.handleStream)
 		api.GET("/download", s.mediaRetrievalHandler.handleDownload)
 		api.GET("/getCoverArt", s.mediaRetrievalHandler.handleGetCoverArt)
+
+		//Media scanning routes
+		api.GET("/getScanStatus", s.mediaScanningHandler.handleGetScanStatus)
+		api.POST("/startScan", s.mediaScanningHandler.handleStartScan)
 	}
 }
 
