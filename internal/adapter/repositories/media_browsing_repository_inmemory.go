@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type MediaBrowsingRepositoryInMemory struct {
+type InMemoryMediaBrowsingRepository struct {
 	artists map[int]domain.Artist
 	albums  map[int]domain.Album
 	songs   map[int]domain.Song
@@ -15,8 +15,8 @@ type MediaBrowsingRepositoryInMemory struct {
 	mu      sync.RWMutex
 }
 
-func NewMediaBrowsingRepositoryInMemory() *MediaBrowsingRepositoryInMemory {
-	return &MediaBrowsingRepositoryInMemory{
+func NewInMemoryMediaBrowsingRepository() *InMemoryMediaBrowsingRepository {
+	return &InMemoryMediaBrowsingRepository{
 		artists: make(map[int]domain.Artist),
 		albums:  make(map[int]domain.Album),
 		songs:   make(map[int]domain.Song),
@@ -24,7 +24,7 @@ func NewMediaBrowsingRepositoryInMemory() *MediaBrowsingRepositoryInMemory {
 	}
 }
 
-func (r *MediaBrowsingRepositoryInMemory) GetArtistByID(ctx context.Context, id int) (domain.Artist, error) {
+func (r *InMemoryMediaBrowsingRepository) GetArtistByID(ctx context.Context, id int) (domain.Artist, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -35,7 +35,7 @@ func (r *MediaBrowsingRepositoryInMemory) GetArtistByID(ctx context.Context, id 
 	return artist, nil
 }
 
-func (r *MediaBrowsingRepositoryInMemory) GetAlbumByID(ctx context.Context, id int) (domain.Album, error) {
+func (r *InMemoryMediaBrowsingRepository) GetAlbumByID(ctx context.Context, id int) (domain.Album, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -46,7 +46,7 @@ func (r *MediaBrowsingRepositoryInMemory) GetAlbumByID(ctx context.Context, id i
 	return album, nil
 }
 
-func (r *MediaBrowsingRepositoryInMemory) GetSongByID(ctx context.Context, id int) (domain.Song, error) {
+func (r *InMemoryMediaBrowsingRepository) GetSongByID(ctx context.Context, id int) (domain.Song, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -57,7 +57,7 @@ func (r *MediaBrowsingRepositoryInMemory) GetSongByID(ctx context.Context, id in
 	return song, nil
 }
 
-func (r *MediaBrowsingRepositoryInMemory) GetCoverByID(ctx context.Context, id int) (domain.Cover, error) {
+func (r *InMemoryMediaBrowsingRepository) GetCoverByID(ctx context.Context, id int) (domain.Cover, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -68,7 +68,7 @@ func (r *MediaBrowsingRepositoryInMemory) GetCoverByID(ctx context.Context, id i
 	return cover, nil
 }
 
-func (r *MediaBrowsingRepositoryInMemory) CreateArtist(ctx context.Context, artist domain.Artist) (domain.Artist, error) {
+func (r *InMemoryMediaBrowsingRepository) CreateArtist(ctx context.Context, artist domain.Artist) (domain.Artist, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -76,7 +76,7 @@ func (r *MediaBrowsingRepositoryInMemory) CreateArtist(ctx context.Context, arti
 	return artist, nil
 }
 
-func (r *MediaBrowsingRepositoryInMemory) CreateAlbum(ctx context.Context, album domain.Album) (domain.Album, error) {
+func (r *InMemoryMediaBrowsingRepository) CreateAlbum(ctx context.Context, album domain.Album) (domain.Album, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -84,7 +84,7 @@ func (r *MediaBrowsingRepositoryInMemory) CreateAlbum(ctx context.Context, album
 	return album, nil
 }
 
-func (r *MediaBrowsingRepositoryInMemory) CreateSong(ctx context.Context, song domain.Song) (domain.Song, error) {
+func (r *InMemoryMediaBrowsingRepository) CreateSong(ctx context.Context, song domain.Song) (domain.Song, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -92,7 +92,7 @@ func (r *MediaBrowsingRepositoryInMemory) CreateSong(ctx context.Context, song d
 	return song, nil
 }
 
-func (r *MediaBrowsingRepositoryInMemory) CreateCover(ctx context.Context, cover domain.Cover) (domain.Cover, error) {
+func (r *InMemoryMediaBrowsingRepository) CreateCover(ctx context.Context, cover domain.Cover) (domain.Cover, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

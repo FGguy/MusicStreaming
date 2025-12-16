@@ -64,17 +64,23 @@ func main() {
 	// Setup Dependencies
 
 	// Repositories
+	// TODO: Use factory to choose repository implementations based on config
 	InMemoryUserManagementRepository := repositories.NewInMemoryUserManagementRepository()
+	InMemoryMediaBrowsingRepository := repositories.NewInMemoryMediaBrowsingRepository()
 
 	// Services
 	UserAuthenticationService := services.NewUserAuthenticationService(InMemoryUserManagementRepository)
 	UserManagementService := services.NewUserManagementService(InMemoryUserManagementRepository)
+	MediaBrowsingService := services.NewMediaBrowsingService(InMemoryMediaBrowsingRepository)
+	MediaRetrievalService := services.NewMediaRetrievalService(InMemoryMediaBrowsingRepository)
 
 	// Handlers
 	UserManagementHandler := handlers.NewUserManagementHandler(UserManagementService)
 	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService)
+	MediaBrowsingHandler := handlers.NewMediaBrowsingHandler(MediaBrowsingService)
+	MediaRetrievalHandler := handlers.NewMediaRetrievalHandler(MediaRetrievalService)
 
-	app := handlers.NewApplication(config, UserManagementHandler, UserAuthenticationMiddleware)
+	app := handlers.NewApplication(config, UserManagementHandler, UserAuthenticationMiddleware, MediaBrowsingHandler, MediaRetrievalHandler)
 
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%d", PORT),

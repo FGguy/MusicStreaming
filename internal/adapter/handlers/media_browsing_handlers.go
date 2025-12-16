@@ -11,6 +11,12 @@ type MediaBrowsingHandler struct {
 	MediaBrowsingService ports.MediaBrowsingPort
 }
 
+func NewMediaBrowsingHandler(mediaBrowsingServ ports.MediaBrowsingPort) *MediaBrowsingHandler {
+	return &MediaBrowsingHandler{
+		MediaBrowsingService: mediaBrowsingServ,
+	}
+}
+
 func (h *MediaBrowsingHandler) handleGetArtist(c *gin.Context) {
 	var (
 		ctx     = c.Request.Context()

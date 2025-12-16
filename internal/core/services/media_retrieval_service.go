@@ -7,12 +7,12 @@ import (
 )
 
 type MediaRetrievalService struct {
-	MediaBrowsingService ports.MediaBrowsingPort
+	MediaBrowsingRepository ports.MediaBrowsingRepository
 }
 
-func NewMediaRetrievalService(mediaBrowsingService ports.MediaBrowsingPort) *MediaRetrievalService {
+func NewMediaRetrievalService(mediaBrowsingRepository ports.MediaBrowsingRepository) *MediaRetrievalService {
 	return &MediaRetrievalService{
-		MediaBrowsingService: mediaBrowsingService,
+		MediaBrowsingRepository: mediaBrowsingRepository,
 	}
 }
 
@@ -22,7 +22,7 @@ func (s *MediaRetrievalService) DownloadSong(ctx context.Context, id int) (domai
 		return domain.Song{}, &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "download song"}
 	}
 
-	song, err := s.MediaBrowsingService.GetSong(ctx, id)
+	song, err := s.MediaBrowsingRepository.GetSongByID(ctx, id)
 	if err != nil {
 		return domain.Song{}, err
 	}
@@ -35,7 +35,7 @@ func (s *MediaRetrievalService) StreamSong(ctx context.Context, id int) (domain.
 		return domain.Song{}, &ports.NotAuthorizedError{Username: requestingUser.Username, Action: "download song"}
 	}
 
-	song, err := s.MediaBrowsingService.GetSong(ctx, id)
+	song, err := s.MediaBrowsingRepository.GetSongByID(ctx, id)
 	if err != nil {
 		return domain.Song{}, err
 	}
@@ -43,7 +43,7 @@ func (s *MediaRetrievalService) StreamSong(ctx context.Context, id int) (domain.
 }
 
 func (s *MediaRetrievalService) GetCover(ctx context.Context, id int) (domain.Cover, error) {
-	cover, err := s.MediaBrowsingService.GetCover(ctx, id)
+	cover, err := s.MediaBrowsingRepository.GetCoverByID(ctx, id)
 	if err != nil {
 		return domain.Cover{}, err
 	}
