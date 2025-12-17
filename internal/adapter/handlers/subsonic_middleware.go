@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -111,7 +110,6 @@ func ValidateSubsonicQueryParameters(c *gin.Context) {
 
 	var params requiredParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		log.Debug().Err(err)
 		buildAndSendError(c, "10")
 		return
 	}
@@ -125,13 +123,11 @@ func ValidateSubsonicQueryParameters(c *gin.Context) {
 	clientVersion := strings.Split(params.V, ".")
 	clientMajorVersion, err := strconv.Atoi(clientVersion[0])
 	if err != nil {
-		log.Warn().Err(err).Msgf("Failed converting subsonic client major version into int")
 		buildAndSendError(c, "0")
 		return
 	}
 	clientMinorVersion, err := strconv.Atoi(clientVersion[1])
 	if err != nil {
-		log.Warn().Err(err).Msgf("Failed converting subsonic client minor version into int")
 		buildAndSendError(c, "0")
 		return
 	}
@@ -181,7 +177,6 @@ func SerializeAndSendBody(c *gin.Context, body any) {
 	}
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to serialize response")
 		c.Data(http.StatusInternalServerError, contentType, []byte{})
 		return
 	}

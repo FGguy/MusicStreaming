@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
 type MediaRetrievalHandler struct {
@@ -70,7 +69,6 @@ func (h *MediaRetrievalHandler) handleStream(c *gin.Context) {
 
 	var params StreamParameters
 	if err := c.ShouldBindQuery(&params); err != nil {
-		log.Debug().Err(err)
 		buildAndSendError(c, "10")
 		return
 	}

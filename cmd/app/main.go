@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	handlers "music-streaming/internal/adapter/handlers"
 	"music-streaming/internal/adapter/repositories"
 	"music-streaming/internal/core/config"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -24,32 +24,31 @@ const (
 )
 
 var (
-	logLevels = map[string]zerolog.Level{
-		"trace": zerolog.TraceLevel,
-		"debug": zerolog.DebugLevel,
-		"warn":  zerolog.WarnLevel,
-		"error": zerolog.ErrorLevel,
-		"fatal": zerolog.FatalLevel,
-		"panic": zerolog.PanicLevel,
-		"info":  zerolog.InfoLevel,
+	logLevels = map[string]slog.Level{
+		"info":  slog.LevelInfo,
+		"debug": slog.LevelDebug,
+		"warn":  slog.LevelWarn,
+		"error": slog.LevelError,
 	}
 )
 
 func main() {
 	//Setup Logging
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-
 	logLevelFlag := flag.String("loglevel", "info", "Used to set global logging level.")
 	flag.Parse()
 
 	logLevel, ok := logLevels[*logLevelFlag]
 	if !ok {
-		logLevel = zerolog.InfoLevel
-		log.Info().Msg("No log level passed or invalid value. Log level set to: info")
-	} else {
-		log.Info().Msgf("Log level set to: %s", *logLevelFlag)
+		logLevel = slog.LevelInfo // Default to info level
 	}
-	zerolog.SetGlobalLevel(logLevel)
+
+	opts := &slog.HandlerOptions{
+		Level: logLevel,
+	}
+
+	handler := slog.NewJSONHandler(os.Stdout, opts)
+	logger := slog.NewLogLogger(handler, logLevel)
+	jsonLogger := slog.New(handler)
 
 	//Load .env
 	if err := godotenv.Load(); err != nil {
@@ -64,9 +63,7 @@ func main() {
 	}
 
 	// Setup Dependencies
-
 	// Repositories
-	// TODO: Use factory to choose repository implementations based on config
 	InMemoryUserManagementRepository := repositories.NewInMemoryUserManagementRepository()
 	InMemoryMediaBrowsingRepository := repositories.NewInMemoryMediaBrowsingRepository()
 
@@ -107,6 +104,7 @@ func main() {
 		Handler:        app.Router,
 		MaxHeaderBytes: 4 * 1024,
 		ReadTimeout:    5 * time.Second,
+		ErrorLog:       logger,
 	}
 
 	log.Info().Msgf("Starting server at address :%d", PORT)
@@ -122,8 +120,8 @@ func main() {
 
 	select {
 	case err := <-serverError:
-		log.Info().Msgf("Server error: %v", err)
+		jsonLogger.Error("Server error", slog.String("error", err.Error()))
 	case sig := <-stop:
-		log.Info().Msgf("Received shutdown signal: %v", sig)
+		jsonLogger.Info("Shutting down server", slog.String("signal", sig.String()))
 	}
 }
