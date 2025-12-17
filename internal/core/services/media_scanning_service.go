@@ -5,16 +5,20 @@ import (
 	"music-streaming/internal/core/domain"
 	"music-streaming/internal/core/ports"
 	"sync"
+
+	"music-streaming/internal/core/config"
 )
 
 type MediaScanningService struct {
 	//repo       ports.MediaBrowsingRepository
+	config     *config.Config
 	scanStatus *domain.ScanStatus
 	mu         sync.Mutex
 }
 
-func NewMediaScanningService() *MediaScanningService {
+func NewMediaScanningService(config *config.Config) *MediaScanningService {
 	return &MediaScanningService{
+		config: config,
 		scanStatus: &domain.ScanStatus{
 			Scanning: false,
 			Count:    0,

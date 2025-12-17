@@ -6,6 +6,7 @@ import (
 	"fmt"
 	handlers "music-streaming/internal/adapter/handlers"
 	"music-streaming/internal/adapter/repositories"
+	"music-streaming/internal/core/config"
 	"music-streaming/internal/core/services"
 	"net/http"
 	"os"
@@ -55,8 +56,9 @@ func main() {
 		log.Fatal().Msg("Error loading .env file")
 	}
 
-	//Load config file
-	config, err := handlers.LoadConfig()
+	// Load config file
+	// Should be injected into application components that need it
+	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Msgf("Failed loading server configuration file. Error: %s", err)
 	}
@@ -73,7 +75,7 @@ func main() {
 	UserManagementService := services.NewUserManagementService(InMemoryUserManagementRepository)
 	MediaBrowsingService := services.NewMediaBrowsingService(InMemoryMediaBrowsingRepository)
 	MediaRetrievalService := services.NewMediaRetrievalService(InMemoryMediaBrowsingRepository)
-	MediaScanningService := services.NewMediaScanningService()
+	MediaScanningService := services.NewMediaScanningService(config)
 
 	// Middleware
 	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService)
@@ -86,7 +88,7 @@ func main() {
 	SystemHandler := handlers.NewSystemHandler()
 
 	app := handlers.
-		NewApplication(config).
+		NewApplication().
 		WithMiddleware(
 			handlers.ValidateSubsonicQueryParameters,
 			UserAuthenticationMiddleware.WithAuth,
@@ -110,7 +112,7 @@ func main() {
 	log.Info().Msgf("Starting server at address :%d", PORT)
 	serverError := make(chan error, 1)
 	go func() {
-		if err = srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			serverError <- err
 		}
 	}()
