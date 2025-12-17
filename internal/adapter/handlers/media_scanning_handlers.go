@@ -18,6 +18,11 @@ func NewMediaScanningHandler(mediaScanningService ports.MediaScanningPort) *Medi
 	}
 }
 
+func (h *MediaScanningHandler) RegisterRoutes(group *gin.RouterGroup) {
+	group.GET("/getScanStatus", h.handleGetScanStatus)
+	group.POST("/startScan", h.handleStartScan)
+}
+
 func (h *MediaScanningHandler) handleGetScanStatus(c *gin.Context) {
 	scanStatus, err := h.mediaScanningService.GetScanStatus(c.Request.Context())
 	if err != nil {

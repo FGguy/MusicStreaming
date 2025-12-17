@@ -17,6 +17,12 @@ func NewMediaBrowsingHandler(mediaBrowsingServ ports.MediaBrowsingPort) *MediaBr
 	}
 }
 
+func (h *MediaBrowsingHandler) RegisterRoutes(group *gin.RouterGroup) {
+	group.GET("/getArtist", h.handleGetArtist)
+	group.GET("/getAlbum", h.handleGetAlbum)
+	group.GET("/getSong", h.handleGetSong)
+}
+
 func (h *MediaBrowsingHandler) handleGetArtist(c *gin.Context) {
 	var (
 		ctx     = c.Request.Context()

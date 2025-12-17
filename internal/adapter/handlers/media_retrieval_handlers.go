@@ -20,6 +20,12 @@ func NewMediaRetrievalHandler(mediaRetrievalService ports.MediaRetrievalPort) *M
 	}
 }
 
+func (h *MediaRetrievalHandler) RegisterRoutes(group *gin.RouterGroup) {
+	group.GET("/stream", h.handleStream)
+	group.GET("/download", h.handleDownload)
+	group.GET("/getCoverArt", h.handleGetCoverArt)
+}
+
 func (h *MediaRetrievalHandler) handleDownload(c *gin.Context) {
 	var (
 		rUser   = c.MustGet(RequestingUserKey).(*domain.User)

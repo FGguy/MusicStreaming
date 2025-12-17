@@ -6,37 +6,49 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Handler interface {
+	RegisterRoutes(group *gin.RouterGroup)
+}
+
 type Config struct {
 	MusicDirectories []string `mapstructure:"music-directories"`
 }
 
 type Application struct {
-	Router *gin.Engine
-	config *Config
-
-	userManagementHandler *UserManagementHandler
-	userAuthMiddleware    *UserManagementMiddleware
-
-	mediaBrowsingHandler  *MediaBrowsingHandler
-	mediaRetrievalHandler *MediaRetrievalHandler
-	mediaScanningHandler  *MediaScanningHandler
+	Router     *gin.Engine
+	config     *Config
+	middleware []gin.HandlerFunc
+	handlers   []Handler
 }
 
-func NewApplication(config *Config, userManagementHandler *UserManagementHandler, userAuthMiddleware *UserManagementMiddleware, mediaBrowsingHandler *MediaBrowsingHandler, mediaRetrievalHandler *MediaRetrievalHandler, mediaScanningHandler *MediaScanningHandler) *Application {
+// Global middleware is run in order that they are added
+func (a *Application) WithMiddleware(middleware ...gin.HandlerFunc) *Application {
+	a.middleware = middleware
+	return a
+}
+
+func (a *Application) WithHandlers(handlers ...Handler) *Application {
+	a.handlers = handlers
+	return a
+}
+
+func NewApplication(config *Config) *Application {
 	router := gin.Default()
 
 	app := &Application{
-		Router:                router,
-		config:                config,
-		userManagementHandler: userManagementHandler,
-		userAuthMiddleware:    userAuthMiddleware,
-		mediaBrowsingHandler:  mediaBrowsingHandler,
-		mediaRetrievalHandler: mediaRetrievalHandler,
-		mediaScanningHandler:  mediaScanningHandler,
+		Router: router,
+		config: config,
 	}
-	app.mountHandlers()
 
 	return app
+}
+
+func (a *Application) RegisterHandlers() *Application {
+	api := a.Router.Group("/rest", a.middleware...)
+	for _, handler := range a.handlers {
+		handler.RegisterRoutes(api)
+	}
+	return a
 }
 
 func LoadConfig() (*Config, error) {
@@ -56,43 +68,4 @@ func LoadConfig() (*Config, error) {
 	log.Debug().Msgf("Using config file: %s\n", viper.ConfigFileUsed())
 	log.Debug().Msgf("Loaded config: %+v\n", config)
 	return &config, nil
-}
-
-func (s *Application) mountHandlers() {
-	api := s.Router.Group("/rest", ValidateSubsonicQueryParameters, s.userAuthMiddleware.WithAuth)
-	{
-		api.GET("/ping", s.handlePing)
-
-		//User management routes
-		api.GET("/getUser", s.userManagementHandler.hangleGetUser)
-		api.GET("/getUsers", s.userManagementHandler.hangleGetUsers)
-		api.POST("/createUser", s.userManagementHandler.handleCreateUser)
-		api.POST("/updateUser", s.userManagementHandler.handleUpdateUser)
-		api.POST("/deleteUser", s.userManagementHandler.handleDeleteUser)
-		api.POST("/changePassword", s.userManagementHandler.handleChangePassword)
-
-		//Media browsing routes
-		api.GET("/getArtist", s.mediaBrowsingHandler.handleGetArtist)
-		api.GET("/getAlbum", s.mediaBrowsingHandler.handleGetAlbum)
-		api.GET("/getSong", s.mediaBrowsingHandler.handleGetSong)
-
-		//Media retrieval routes
-		api.GET("/stream", s.mediaRetrievalHandler.handleStream)
-		api.GET("/download", s.mediaRetrievalHandler.handleDownload)
-		api.GET("/getCoverArt", s.mediaRetrievalHandler.handleGetCoverArt)
-
-		//Media scanning routes
-		api.GET("/getScanStatus", s.mediaScanningHandler.handleGetScanStatus)
-		api.POST("/startScan", s.mediaScanningHandler.handleStartScan)
-	}
-}
-
-func (s *Application) handlePing(c *gin.Context) {
-	subsonicRes := SubsonicResponse{
-		Xmlns:   Xmlns,
-		Status:  "ok",
-		Version: SubsonicVersion,
-	}
-
-	SerializeAndSendBody(c, subsonicRes)
 }

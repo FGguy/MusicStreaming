@@ -18,6 +18,15 @@ func NewUserManagementHandler(userServ ports.UserManagementPort) *UserManagement
 	}
 }
 
+func (h *UserManagementHandler) RegisterRoutes(group *gin.RouterGroup) {
+	group.GET("/getUser", h.hangleGetUser)
+	group.GET("/getUsers", h.hangleGetUsers)
+	group.POST("/createUser", h.handleCreateUser)
+	group.POST("/updateUser", h.handleUpdateUser)
+	group.POST("/deleteUser", h.handleDeleteUser)
+	group.POST("/changePassword", h.handleChangePassword)
+}
+
 func (h *UserManagementHandler) hangleGetUser(c *gin.Context) {
 	var (
 		rUser    = c.MustGet(RequestingUserKey).(*domain.User)
