@@ -114,13 +114,12 @@ func (h *MediaRetrievalHandler) handleGetCoverArt(c *gin.Context) {
 		paramId = c.Query("id")
 	)
 
-	id, err := strconv.Atoi(paramId)
-	if paramId == "" || err != nil {
+	if paramId == "" {
 		buildAndSendError(c, "10")
 		return
 	}
 
-	cover, err := h.MediaRetrievalService.GetCover(ctx, id)
+	cover, err := h.MediaRetrievalService.GetCover(ctx, paramId)
 	if err != nil {
 		switch err.(type) {
 		case *ports.NotFoundError:

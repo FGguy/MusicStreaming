@@ -29,7 +29,7 @@ type Song struct {
 	Created     string `json:"created" xml:"created"`
 	Duration    int    `json:"duration" xml:"duration"`
 	BitRate     int    `json:"bitRate" xml:"bitRate"`
-	Size        int    `json:"size" xml:"size"`
+	Size        int64  `json:"size" xml:"size"`
 	Suffix      string `json:"suffix" xml:"suffix"`
 	ContentType string `json:"contentType" xml:"contentType"`
 	IsVideo     bool   `json:"isVideo" xml:"isVideo"`
@@ -37,6 +37,6 @@ type Song struct {
 }
 
 type Cover struct {
-	Id   int
+	Id   string
 	Path string
 }

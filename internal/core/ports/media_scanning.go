@@ -6,6 +6,7 @@ import (
 )
 
 type MediaScanningPort interface {
+	FFProbeProcessFile(path string) (*domain.FFProbeInfo, error)
 	StartScan(ctx context.Context) (domain.ScanStatus, error)
 	GetScanStatus(ctx context.Context) (domain.ScanStatus, error)
 	Scan()

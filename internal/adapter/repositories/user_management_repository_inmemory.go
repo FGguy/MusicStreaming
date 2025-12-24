@@ -26,6 +26,7 @@ func (r *InMemoryUserManagementRepository) CreateUser(ctx context.Context, user 
 	if _, exists := r.users[user.Username]; exists {
 		return &ports.FailedOperationError{Description: "User already exists"}
 	}
+
 	r.users[user.Username] = user
 	return nil
 }

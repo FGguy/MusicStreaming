@@ -28,6 +28,6 @@ func (s *MediaBrowsingService) GetSong(ctx context.Context, id int) (domain.Song
 	return s.mediaBrowsingRepo.GetSongByID(ctx, id)
 }
 
-func (s *MediaBrowsingService) GetCover(ctx context.Context, id int) (domain.Cover, error) {
+func (s *MediaBrowsingService) GetCover(ctx context.Context, id string) (domain.Cover, error) {
 	return s.mediaBrowsingRepo.GetCoverByID(ctx, id)
 }

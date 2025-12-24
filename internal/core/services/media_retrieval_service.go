@@ -42,7 +42,7 @@ func (s *MediaRetrievalService) StreamSong(ctx context.Context, id int) (domain.
 	return song, nil
 }
 
-func (s *MediaRetrievalService) GetCover(ctx context.Context, id int) (domain.Cover, error) {
+func (s *MediaRetrievalService) GetCover(ctx context.Context, id string) (domain.Cover, error) {
 	cover, err := s.MediaBrowsingRepository.GetCoverByID(ctx, id)
 	if err != nil {
 		return domain.Cover{}, err
