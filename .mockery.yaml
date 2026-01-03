@@ -1,0 +1,11 @@
+with-expecter: true
+packages:
+  music-streaming/internal/core/ports:
+    interfaces:
+      MediaBrowsingRepository:
+        config:
+          dir: "internal/core/services/mocks"
+      UserManagementRepository:
+        config:
+          dir: "internal/core/services/mocks"
+
