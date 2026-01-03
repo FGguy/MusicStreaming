@@ -7,11 +7,15 @@ import (
 	"sync"
 )
 
+/*
+* artists, albums and songs have their id created by the repository (auto-increment)
+ */
+
 type InMemoryMediaBrowsingRepository struct {
 	artists map[int]domain.Artist
 	albums  map[int]domain.Album
 	songs   map[int]domain.Song
-	cover   map[int]domain.Cover
+	cover   map[string]domain.Cover
 	mu      sync.RWMutex
 }
 
@@ -20,7 +24,7 @@ func NewInMemoryMediaBrowsingRepository() *InMemoryMediaBrowsingRepository {
 		artists: make(map[int]domain.Artist),
 		albums:  make(map[int]domain.Album),
 		songs:   make(map[int]domain.Song),
-		cover:   make(map[int]domain.Cover),
+		cover:   make(map[string]domain.Cover),
 	}
 }
 
@@ -57,7 +61,7 @@ func (r *InMemoryMediaBrowsingRepository) GetSongByID(ctx context.Context, id in
 	return song, nil
 }
 
-func (r *InMemoryMediaBrowsingRepository) GetCoverByID(ctx context.Context, id int) (domain.Cover, error) {
+func (r *InMemoryMediaBrowsingRepository) GetCoverByID(ctx context.Context, id string) (domain.Cover, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -72,6 +76,8 @@ func (r *InMemoryMediaBrowsingRepository) CreateArtist(ctx context.Context, arti
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	// assign a new ID
+	artist.Id = len(r.artists) + 1
 	r.artists[artist.Id] = artist
 	return artist, nil
 }
@@ -80,6 +86,8 @@ func (r *InMemoryMediaBrowsingRepository) CreateAlbum(ctx context.Context, album
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	// assign a new ID
+	album.Id = len(r.albums) + 1
 	r.albums[album.Id] = album
 	return album, nil
 }
@@ -88,6 +96,8 @@ func (r *InMemoryMediaBrowsingRepository) CreateSong(ctx context.Context, song d
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	// assign a new ID
+	song.Id = len(r.songs) + 1
 	r.songs[song.Id] = song
 	return song, nil
 }

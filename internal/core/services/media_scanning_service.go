@@ -11,8 +11,10 @@ import (
 )
 
 type MediaScanningService struct {
-	//repo       ports.MediaBrowsingRepository
-	config     *config.Config
+	repo   ports.MediaBrowsingRepository
+	logger *slog.Logger
+	config *config.Config
+
 	scanStatus *domain.ScanStatus
 	mu         sync.Mutex
 	logger     *slog.Logger
@@ -20,6 +22,8 @@ type MediaScanningService struct {
 
 func NewMediaScanningService(config *config.Config, logger *slog.Logger) *MediaScanningService {
 	return &MediaScanningService{
+		repo:   repo,
+		logger: logger,
 		config: config,
 		scanStatus: &domain.ScanStatus{
 			Scanning: false,
@@ -50,9 +54,14 @@ func (s *MediaScanningService) StartScan(ctx context.Context) (domain.ScanStatus
 		return *s.scanStatus, nil
 	}
 
-	s.scanStatus.Scanning = true
-	s.logger.Info("Media scan started", slog.String("username", username))
-	go s.Scan()
+	// If a scan is already in progress, return the current status
+	if s.scanStatus.Scanning {
+		return *s.scanStatus, nil
+	} else {
+		s.scanStatus.Count = 0
+		s.scanStatus.Scanning = true
+		go s.Scan()
+	}
 
 	return *s.scanStatus, nil
 }
@@ -76,9 +85,7 @@ func (s *MediaScanningService) GetScanStatus(ctx context.Context) (domain.ScanSt
 	return *s.scanStatus, nil
 }
 
+// TODO: Refactor into smaller functions
 func (s *MediaScanningService) Scan() {
 	// Implementation of the scanning logic goes here
-	s.logger.Info("Media scan process started")
-	// TODO: Implement actual scanning logic
-	s.logger.Info("Media scan process completed")
 }

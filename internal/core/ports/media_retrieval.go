@@ -11,5 +11,5 @@ import (
 type MediaRetrievalPort interface {
 	DownloadSong(ctx context.Context, id int) (domain.Song, error)
 	StreamSong(ctx context.Context, id int) (domain.Song, error)
-	GetCover(ctx context.Context, id int) (domain.Cover, error)
+	GetCover(ctx context.Context, id string) (domain.Cover, error)
 }

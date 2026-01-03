@@ -134,7 +134,6 @@ func (h *MediaRetrievalHandler) handleGetCoverArt(c *gin.Context) {
 		return
 	}
 
-	h.logger.Info("Get cover art handler called", slog.Int("id", id))
 	cover, err := h.MediaRetrievalService.GetCover(ctx, id)
 	if err != nil {
 		h.logger.Warn("Get cover art handler error", slog.Int("id", id), slog.String("error", err.Error()))
