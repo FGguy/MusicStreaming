@@ -3,9 +3,9 @@ package repositories
 import (
 	"context"
 	"fmt"
+	sqlc "music-streaming/internal/adapter/sql/sqlc"
 	"music-streaming/internal/core/domain"
 	"music-streaming/internal/core/ports"
-	sqlc "music-streaming/internal/adapter/sql/sqlc"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -156,8 +156,7 @@ func (r *SQLMediaBrowsingRepository) CreateSong(ctx context.Context, song domain
 	if song.Artist != "" {
 		artist = pgtype.Text{String: song.Artist, Valid: true}
 	}
-	var isDir pgtype.Bool
-	isDir = pgtype.Bool{Bool: song.IsDir, Valid: true}
+	isDir := pgtype.Bool{Bool: song.IsDir, Valid: true}
 	var coverArt pgtype.Text
 	if song.CoverArt != "" {
 		coverArt = pgtype.Text{String: song.CoverArt, Valid: true}
@@ -191,8 +190,7 @@ func (r *SQLMediaBrowsingRepository) CreateSong(ctx context.Context, song domain
 	if song.ContentType != "" {
 		contentType = pgtype.Text{String: song.ContentType, Valid: true}
 	}
-	var isVideo pgtype.Bool
-	isVideo = pgtype.Bool{Bool: song.IsVideo, Valid: true}
+	isVideo := pgtype.Bool{Bool: song.IsVideo, Valid: true}
 
 	sqlSong, err := r.queries.CreateSong(ctx, sqlc.CreateSongParams{
 		AlbumID:     albumID,
@@ -318,4 +316,3 @@ func toDomainSong(sqlSong sqlc.Song) domain.Song {
 	}
 	return song
 }
-

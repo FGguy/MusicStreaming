@@ -73,7 +73,7 @@ func main() {
 	if err != nil {
 		jsonLogger.Error("Failed to connect to database", slog.String("error", err.Error()))
 	}
-	defer db.Close(context.Background())
+	defer db.Close(context.Background()) // nolint:errcheck
 
 	// Test database connection
 	if err := db.Ping(context.Background()); err != nil {
@@ -99,7 +99,7 @@ func main() {
 		jsonLogger.Error("Failed to connect to Redis", slog.String("error", err.Error()))
 	}
 	jsonLogger.Info("Successfully connected to Redis")
-	defer redisClient.Close()
+	defer redisClient.Close() // nolint:errcheck
 
 	// Setup Dependencies
 	// Repositories

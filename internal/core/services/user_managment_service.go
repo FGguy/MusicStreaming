@@ -57,7 +57,7 @@ func (s *UserManagementService) UpdateUser(ctx context.Context, username string,
 	}
 	s.logger.Info("Update user request", slog.String("requesting_user", requestingUsername), slog.String("target_username", username))
 
-	if !ok || requestingUser == nil || (!requestingUser.AdminRole && !(requestingUser.Username == username && requestingUser.SettingsRole)) {
+	if !ok || requestingUser == nil || (!requestingUser.AdminRole && (requestingUser.Username != username || !requestingUser.SettingsRole)) {
 		s.logger.Warn("Unauthorized update user attempt", slog.String("requesting_user", requestingUsername), slog.String("target_username", username))
 		return &ports.NotAuthorizedError{Username: requestingUsername, Action: "update user"}
 	}

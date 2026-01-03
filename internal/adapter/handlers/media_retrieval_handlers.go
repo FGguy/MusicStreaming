@@ -113,9 +113,9 @@ func (h *MediaRetrievalHandler) handleStream(c *gin.Context) {
 	//Validate string
 	//transcode file
 
-	if params.EstimatedContentLength {
-		//set header
-	}
+	// if params.EstimatedContentLength {
+	// 	//set header
+	// }
 
 	h.logger.Info("Stream handler success", slog.Int("id", id), slog.String("title", song.Title), slog.String("username", rUser.Username))
 	c.File(song.Path)
