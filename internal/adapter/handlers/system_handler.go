@@ -1,12 +1,19 @@
 package handlers
 
-import "github.com/gin-gonic/gin"
+import (
+	"log/slog"
+
+	"github.com/gin-gonic/gin"
+)
 
 type SystemHandler struct {
+	logger *slog.Logger
 }
 
-func NewSystemHandler() *SystemHandler {
-	return &SystemHandler{}
+func NewSystemHandler(logger *slog.Logger) *SystemHandler {
+	return &SystemHandler{
+		logger: logger,
+	}
 }
 
 func (h *SystemHandler) RegisterRoutes(group *gin.RouterGroup) {
@@ -14,6 +21,7 @@ func (h *SystemHandler) RegisterRoutes(group *gin.RouterGroup) {
 }
 
 func (h *SystemHandler) handlePing(c *gin.Context) {
+	h.logger.Debug("Ping handler called")
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",

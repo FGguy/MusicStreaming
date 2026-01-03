@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
 	"music-streaming/internal/core/domain"
 	"music-streaming/internal/core/ports"
 	"strconv"
@@ -11,11 +12,13 @@ import (
 
 type MediaRetrievalHandler struct {
 	MediaRetrievalService ports.MediaRetrievalPort
+	logger                *slog.Logger
 }
 
-func NewMediaRetrievalHandler(mediaRetrievalService ports.MediaRetrievalPort) *MediaRetrievalHandler {
+func NewMediaRetrievalHandler(mediaRetrievalService ports.MediaRetrievalPort, logger *slog.Logger) *MediaRetrievalHandler {
 	return &MediaRetrievalHandler{
 		MediaRetrievalService: mediaRetrievalService,
+		logger:                logger,
 	}
 }
 
@@ -34,12 +37,15 @@ func (h *MediaRetrievalHandler) handleDownload(c *gin.Context) {
 
 	id, err := strconv.Atoi(paramId)
 	if paramId == "" || err != nil {
+		h.logger.Warn("Download handler - invalid id parameter", slog.String("id", paramId), slog.String("username", rUser.Username))
 		buildAndSendError(c, "10")
 		return
 	}
 
+	h.logger.Info("Download handler called", slog.Int("id", id), slog.String("username", rUser.Username))
 	song, err := h.MediaRetrievalService.DownloadSong(ctx, id)
 	if err != nil {
+		h.logger.Warn("Download handler error", slog.Int("id", id), slog.String("username", rUser.Username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
@@ -51,6 +57,7 @@ func (h *MediaRetrievalHandler) handleDownload(c *gin.Context) {
 		return
 	}
 
+	h.logger.Info("Download handler success", slog.Int("id", id), slog.String("title", song.Title), slog.String("username", rUser.Username))
 	c.FileAttachment(song.Path, song.Title)
 }
 
@@ -69,18 +76,22 @@ func (h *MediaRetrievalHandler) handleStream(c *gin.Context) {
 
 	var params StreamParameters
 	if err := c.ShouldBindQuery(&params); err != nil {
+		h.logger.Warn("Stream handler - bind error", slog.String("username", rUser.Username), slog.String("error", err.Error()))
 		buildAndSendError(c, "10")
 		return
 	}
 
 	id, err := strconv.Atoi(params.Id)
 	if params.Id == "" || err != nil {
+		h.logger.Warn("Stream handler - invalid id parameter", slog.String("id", params.Id), slog.String("username", rUser.Username))
 		buildAndSendError(c, "10")
 		return
 	}
 
-	song, err := h.MediaRetrievalService.DownloadSong(ctx, id)
+	h.logger.Info("Stream handler called", slog.Int("id", id), slog.String("username", rUser.Username), slog.Int("maxBitRate", params.MaxBitRate))
+	song, err := h.MediaRetrievalService.StreamSong(ctx, id)
 	if err != nil {
+		h.logger.Warn("Stream handler error", slog.Int("id", id), slog.String("username", rUser.Username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
@@ -96,6 +107,7 @@ func (h *MediaRetrievalHandler) handleStream(c *gin.Context) {
 	//fix bitrate conversion
 	if params.MaxBitRate > 0 && song.BitRate > params.MaxBitRate {
 		//adjust bitrate
+		h.logger.Debug("Bitrate adjustment needed", slog.Int("songBitRate", song.BitRate), slog.Int("maxBitRate", params.MaxBitRate))
 	}
 	//Format?
 	//Validate string
@@ -105,6 +117,7 @@ func (h *MediaRetrievalHandler) handleStream(c *gin.Context) {
 		//set header
 	}
 
+	h.logger.Info("Stream handler success", slog.Int("id", id), slog.String("title", song.Title), slog.String("username", rUser.Username))
 	c.File(song.Path)
 }
 
@@ -116,12 +129,15 @@ func (h *MediaRetrievalHandler) handleGetCoverArt(c *gin.Context) {
 
 	id, err := strconv.Atoi(paramId)
 	if paramId == "" || err != nil {
+		h.logger.Warn("Get cover art handler - invalid id parameter", slog.String("id", paramId))
 		buildAndSendError(c, "10")
 		return
 	}
 
+	h.logger.Info("Get cover art handler called", slog.Int("id", id))
 	cover, err := h.MediaRetrievalService.GetCover(ctx, id)
 	if err != nil {
+		h.logger.Warn("Get cover art handler error", slog.Int("id", id), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotFoundError:
 			buildAndSendError(c, "70")
@@ -131,5 +147,6 @@ func (h *MediaRetrievalHandler) handleGetCoverArt(c *gin.Context) {
 		return
 	}
 
+	h.logger.Info("Get cover art handler success", slog.Int("id", id))
 	c.File(cover.Path)
 }

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log/slog"
 	"music-streaming/internal/core/domain"
 	"music-streaming/internal/core/ports"
 
@@ -10,11 +11,13 @@ import (
 
 type UserManagementHandler struct {
 	userServ ports.UserManagementPort
+	logger   *slog.Logger
 }
 
-func NewUserManagementHandler(userServ ports.UserManagementPort) *UserManagementHandler {
+func NewUserManagementHandler(userServ ports.UserManagementPort, logger *slog.Logger) *UserManagementHandler {
 	return &UserManagementHandler{
 		userServ: userServ,
+		logger:   logger,
 	}
 }
 
@@ -34,8 +37,10 @@ func (h *UserManagementHandler) hangleGetUser(c *gin.Context) {
 		ctx      = context.WithValue(c.Request.Context(), ports.KeyRequestingUserID, rUser)
 	)
 
+	h.logger.Info("Get user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	user, err := h.userServ.GetUser(ctx, username)
 	if err != nil {
+		h.logger.Warn("Get user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotFoundError:
 			buildAndSendError(c, "70")
@@ -48,6 +53,7 @@ func (h *UserManagementHandler) hangleGetUser(c *gin.Context) {
 	}
 
 	user.Password = "" //do not send user passwords
+	h.logger.Info("Get user handler success", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
@@ -65,8 +71,10 @@ func (h *UserManagementHandler) hangleGetUsers(c *gin.Context) {
 		ctx   = context.WithValue(c.Request.Context(), ports.KeyRequestingUserID, rUser)
 	)
 
+	h.logger.Info("Get users handler called", slog.String("requesting_user", rUser.Username))
 	users, err := h.userServ.GetUsers(ctx)
 	if err != nil {
+		h.logger.Warn("Get users handler error", slog.String("requesting_user", rUser.Username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
@@ -77,6 +85,7 @@ func (h *UserManagementHandler) hangleGetUsers(c *gin.Context) {
 	for i := range users {
 		users[i].Password = "" //do not send user passwords
 	}
+	h.logger.Info("Get users handler success", slog.String("requesting_user", rUser.Username), slog.Int("count", len(users)))
 
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
@@ -96,11 +105,14 @@ func (h *UserManagementHandler) handleCreateUser(c *gin.Context) {
 
 	user := &domain.User{}
 	if err := c.Bind(user); err != nil {
+		h.logger.Warn("Create user handler - bind error", slog.String("requesting_user", rUser.Username), slog.String("error", err.Error()))
 		buildAndSendError(c, "0")
 		return
 	}
 
+	h.logger.Info("Create user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", user.Username))
 	if err := h.userServ.CreateUser(ctx, *user); err != nil {
+		h.logger.Warn("Create user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", user.Username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
@@ -112,6 +124,7 @@ func (h *UserManagementHandler) handleCreateUser(c *gin.Context) {
 		return
 	}
 
+	h.logger.Info("Create user handler success", slog.String("requesting_user", rUser.Username), slog.String("target_username", user.Username))
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
@@ -130,12 +143,15 @@ func (h *UserManagementHandler) handleUpdateUser(c *gin.Context) {
 
 	user := &domain.User{}
 	if err := c.Bind(user); err != nil {
+		h.logger.Warn("Update user handler - bind error", slog.String("requesting_user", rUser.Username), slog.String("error", err.Error()))
 		buildAndSendError(c, "0")
 		return
 	}
 
+	h.logger.Info("Update user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	//if no valid updates abort
 	if err := h.userServ.UpdateUser(ctx, username, *user); err != nil {
+		h.logger.Warn("Update user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
@@ -149,6 +165,7 @@ func (h *UserManagementHandler) handleUpdateUser(c *gin.Context) {
 		return
 	}
 
+	h.logger.Info("Update user handler success", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
@@ -165,7 +182,9 @@ func (h *UserManagementHandler) handleDeleteUser(c *gin.Context) {
 		ctx      = context.WithValue(c.Request.Context(), ports.KeyRequestingUserID, rUser)
 	)
 
+	h.logger.Info("Delete user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	if err := h.userServ.DeleteUser(ctx, username); err != nil {
+		h.logger.Warn("Delete user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
@@ -179,6 +198,7 @@ func (h *UserManagementHandler) handleDeleteUser(c *gin.Context) {
 		return
 	}
 
+	h.logger.Info("Delete user handler success", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
@@ -196,7 +216,9 @@ func (h *UserManagementHandler) handleChangePassword(c *gin.Context) {
 		ctx      = context.WithValue(c.Request.Context(), ports.KeyRequestingUserID, rUser)
 	)
 
+	h.logger.Info("Change password handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	if err := h.userServ.ChangePassword(ctx, username, password); err != nil {
+		h.logger.Warn("Change password handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
 			buildAndSendError(c, "50")
@@ -210,6 +232,7 @@ func (h *UserManagementHandler) handleChangePassword(c *gin.Context) {
 		return
 	}
 
+	h.logger.Info("Change password handler success", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",

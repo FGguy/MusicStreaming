@@ -68,21 +68,21 @@ func main() {
 	InMemoryMediaBrowsingRepository := repositories.NewInMemoryMediaBrowsingRepository()
 
 	// Services
-	UserAuthenticationService := services.NewUserAuthenticationService(InMemoryUserManagementRepository)
-	UserManagementService := services.NewUserManagementService(InMemoryUserManagementRepository)
-	MediaBrowsingService := services.NewMediaBrowsingService(InMemoryMediaBrowsingRepository)
-	MediaRetrievalService := services.NewMediaRetrievalService(InMemoryMediaBrowsingRepository)
-	MediaScanningService := services.NewMediaScanningService(config)
+	UserAuthenticationService := services.NewUserAuthenticationService(InMemoryUserManagementRepository, jsonLogger)
+	UserManagementService := services.NewUserManagementService(InMemoryUserManagementRepository, jsonLogger)
+	MediaBrowsingService := services.NewMediaBrowsingService(InMemoryMediaBrowsingRepository, jsonLogger)
+	MediaRetrievalService := services.NewMediaRetrievalService(InMemoryMediaBrowsingRepository, jsonLogger)
+	MediaScanningService := services.NewMediaScanningService(config, jsonLogger)
 
 	// Middleware
-	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService)
+	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService, jsonLogger)
 
 	// Handlers
-	UserManagementHandler := handlers.NewUserManagementHandler(UserManagementService)
-	MediaBrowsingHandler := handlers.NewMediaBrowsingHandler(MediaBrowsingService)
-	MediaRetrievalHandler := handlers.NewMediaRetrievalHandler(MediaRetrievalService)
-	MediaScanningHandler := handlers.NewMediaScanningHandler(MediaScanningService)
-	SystemHandler := handlers.NewSystemHandler()
+	UserManagementHandler := handlers.NewUserManagementHandler(UserManagementService, jsonLogger)
+	MediaBrowsingHandler := handlers.NewMediaBrowsingHandler(MediaBrowsingService, jsonLogger)
+	MediaRetrievalHandler := handlers.NewMediaRetrievalHandler(MediaRetrievalService, jsonLogger)
+	MediaScanningHandler := handlers.NewMediaScanningHandler(MediaScanningService, jsonLogger)
+	SystemHandler := handlers.NewSystemHandler(jsonLogger)
 
 	app := handlers.
 		NewApplication().
