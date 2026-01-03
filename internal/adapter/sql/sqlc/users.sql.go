@@ -7,6 +7,8 @@ package sql
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const changeUserPassword = `-- name: ChangeUserPassword :one
@@ -232,4 +234,96 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE Users SET
+    password = $2,
+    email = $3,
+    scrobblingEnabled = $4,
+    ldapAuthenticated = $5,
+    adminRole = $6,
+    settingsRole = $7,
+    streamRole = $8,
+    jukeboxRole = $9,
+    downloadRole = $10,
+    uploadRole = $11,
+    playlistRole = $12,
+    coverArtRole = $13,
+    commentRole = $14,
+    podcastRole = $15,
+    shareRole = $16,
+    videoConversionRole = $17,
+    musicFolderId = $18,
+    maxBitRate = $19
+WHERE username = $1 RETURNING username, password, email, scrobblingenabled, ldapauthenticated, adminrole, settingsrole, streamrole, jukeboxrole, downloadrole, uploadrole, playlistrole, coverartrole, commentrole, podcastrole, sharerole, videoconversionrole, musicfolderid, maxbitrate
+`
+
+type UpdateUserParams struct {
+	Username            string
+	Password            string
+	Email               string
+	Scrobblingenabled   bool
+	Ldapauthenticated   bool
+	Adminrole           bool
+	Settingsrole        bool
+	Streamrole          bool
+	Jukeboxrole         bool
+	Downloadrole        bool
+	Uploadrole          bool
+	Playlistrole        bool
+	Coverartrole        bool
+	Commentrole         bool
+	Podcastrole         bool
+	Sharerole           bool
+	Videoconversionrole bool
+	Musicfolderid       pgtype.Text
+	Maxbitrate          int32
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.Username,
+		arg.Password,
+		arg.Email,
+		arg.Scrobblingenabled,
+		arg.Ldapauthenticated,
+		arg.Adminrole,
+		arg.Settingsrole,
+		arg.Streamrole,
+		arg.Jukeboxrole,
+		arg.Downloadrole,
+		arg.Uploadrole,
+		arg.Playlistrole,
+		arg.Coverartrole,
+		arg.Commentrole,
+		arg.Podcastrole,
+		arg.Sharerole,
+		arg.Videoconversionrole,
+		arg.Musicfolderid,
+		arg.Maxbitrate,
+	)
+	var i User
+	err := row.Scan(
+		&i.Username,
+		&i.Password,
+		&i.Email,
+		&i.Scrobblingenabled,
+		&i.Ldapauthenticated,
+		&i.Adminrole,
+		&i.Settingsrole,
+		&i.Streamrole,
+		&i.Jukeboxrole,
+		&i.Downloadrole,
+		&i.Uploadrole,
+		&i.Playlistrole,
+		&i.Coverartrole,
+		&i.Commentrole,
+		&i.Podcastrole,
+		&i.Sharerole,
+		&i.Videoconversionrole,
+		&i.Musicfolderid,
+		&i.Maxbitrate,
+	)
+	return i, err
 }

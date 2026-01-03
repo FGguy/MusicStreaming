@@ -24,3 +24,25 @@ SELECT * FROM Users;
 -- name: ChangeUserPassword :one
 UPDATE Users SET password = $2
 WHERE username = $1 RETURNING *;
+
+-- name: UpdateUser :one
+UPDATE Users SET
+    password = $2,
+    email = $3,
+    scrobblingEnabled = $4,
+    ldapAuthenticated = $5,
+    adminRole = $6,
+    settingsRole = $7,
+    streamRole = $8,
+    jukeboxRole = $9,
+    downloadRole = $10,
+    uploadRole = $11,
+    playlistRole = $12,
+    coverArtRole = $13,
+    commentRole = $14,
+    podcastRole = $15,
+    shareRole = $16,
+    videoConversionRole = $17,
+    musicFolderId = $18,
+    maxBitRate = $19
+WHERE username = $1 RETURNING *;
