@@ -365,7 +365,7 @@ func (_c *MockMediaBrowsingRepository_GetArtistByID_Call) RunAndReturn(run func(
 }
 
 // GetCoverByID provides a mock function with given fields: ctx, id
-func (_m *MockMediaBrowsingRepository) GetCoverByID(ctx context.Context, id int) (domain.Cover, error) {
+func (_m *MockMediaBrowsingRepository) GetCoverByID(ctx context.Context, id string) (domain.Cover, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
@@ -374,16 +374,16 @@ func (_m *MockMediaBrowsingRepository) GetCoverByID(ctx context.Context, id int)
 
 	var r0 domain.Cover
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int) (domain.Cover, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Cover, error)); ok {
 		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int) domain.Cover); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Cover); ok {
 		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Get(0).(domain.Cover)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
@@ -399,14 +399,14 @@ type MockMediaBrowsingRepository_GetCoverByID_Call struct {
 
 // GetCoverByID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id int
+//   - id string
 func (_e *MockMediaBrowsingRepository_Expecter) GetCoverByID(ctx interface{}, id interface{}) *MockMediaBrowsingRepository_GetCoverByID_Call {
 	return &MockMediaBrowsingRepository_GetCoverByID_Call{Call: _e.mock.On("GetCoverByID", ctx, id)}
 }
 
-func (_c *MockMediaBrowsingRepository_GetCoverByID_Call) Run(run func(ctx context.Context, id int)) *MockMediaBrowsingRepository_GetCoverByID_Call {
+func (_c *MockMediaBrowsingRepository_GetCoverByID_Call) Run(run func(ctx context.Context, id string)) *MockMediaBrowsingRepository_GetCoverByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -416,7 +416,7 @@ func (_c *MockMediaBrowsingRepository_GetCoverByID_Call) Return(_a0 domain.Cover
 	return _c
 }
 
-func (_c *MockMediaBrowsingRepository_GetCoverByID_Call) RunAndReturn(run func(context.Context, int) (domain.Cover, error)) *MockMediaBrowsingRepository_GetCoverByID_Call {
+func (_c *MockMediaBrowsingRepository_GetCoverByID_Call) RunAndReturn(run func(context.Context, string) (domain.Cover, error)) *MockMediaBrowsingRepository_GetCoverByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

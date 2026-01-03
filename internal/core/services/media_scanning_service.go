@@ -11,16 +11,14 @@ import (
 )
 
 type MediaScanningService struct {
-	repo   ports.MediaBrowsingRepository
-	logger *slog.Logger
-	config *config.Config
-
+	repo       ports.MediaBrowsingRepository
+	logger     *slog.Logger
+	config     *config.Config
 	scanStatus *domain.ScanStatus
 	mu         sync.Mutex
-	logger     *slog.Logger
 }
 
-func NewMediaScanningService(config *config.Config, logger *slog.Logger) *MediaScanningService {
+func NewMediaScanningService(repo ports.MediaBrowsingRepository, config *config.Config, logger *slog.Logger) *MediaScanningService {
 	return &MediaScanningService{
 		repo:   repo,
 		logger: logger,
@@ -29,7 +27,6 @@ func NewMediaScanningService(config *config.Config, logger *slog.Logger) *MediaS
 			Scanning: false,
 			Count:    0,
 		},
-		logger: logger,
 	}
 }
 
@@ -49,19 +46,16 @@ func (s *MediaScanningService) StartScan(ctx context.Context) (domain.ScanStatus
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// If a scan is already in progress, return the current status
 	if s.scanStatus.Scanning {
 		s.logger.Warn("Scan already in progress", slog.String("username", username))
 		return *s.scanStatus, nil
 	}
 
-	// If a scan is already in progress, return the current status
-	if s.scanStatus.Scanning {
-		return *s.scanStatus, nil
-	} else {
-		s.scanStatus.Count = 0
-		s.scanStatus.Scanning = true
-		go s.Scan()
-	}
+	s.scanStatus.Count = 0
+	s.scanStatus.Scanning = true
+	s.logger.Info("Media scan started", slog.String("username", username))
+	go s.Scan()
 
 	return *s.scanStatus, nil
 }
@@ -88,4 +82,10 @@ func (s *MediaScanningService) GetScanStatus(ctx context.Context) (domain.ScanSt
 // TODO: Refactor into smaller functions
 func (s *MediaScanningService) Scan() {
 	// Implementation of the scanning logic goes here
+}
+
+func (s *MediaScanningService) FFProbeProcessFile(path string) (*domain.FFProbeInfo, error) {
+	s.logger.Debug("FFProbe processing file", slog.String("path", path))
+	// TODO: Implement FFProbe file processing
+	return nil, nil
 }

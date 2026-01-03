@@ -72,7 +72,7 @@ func main() {
 	UserManagementService := services.NewUserManagementService(InMemoryUserManagementRepository, jsonLogger)
 	MediaBrowsingService := services.NewMediaBrowsingService(InMemoryMediaBrowsingRepository, jsonLogger)
 	MediaRetrievalService := services.NewMediaRetrievalService(InMemoryMediaBrowsingRepository, jsonLogger)
-	MediaScanningService := services.NewMediaScanningService(config, jsonLogger)
+	MediaScanningService := services.NewMediaScanningService(InMemoryMediaBrowsingRepository, config, jsonLogger)
 
 	// Middleware
 	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService, jsonLogger)

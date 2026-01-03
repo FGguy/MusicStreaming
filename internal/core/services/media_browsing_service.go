@@ -52,13 +52,13 @@ func (s *MediaBrowsingService) GetSong(ctx context.Context, id int) (domain.Song
 	return song, err
 }
 
-func (s *MediaBrowsingService) GetCover(ctx context.Context, id int) (domain.Cover, error) {
-	s.logger.Info("Getting cover", slog.Int("id", id))
+func (s *MediaBrowsingService) GetCover(ctx context.Context, id string) (domain.Cover, error) {
+	s.logger.Info("Getting cover", slog.String("id", id))
 	cover, err := s.mediaBrowsingRepo.GetCoverByID(ctx, id)
 	if err != nil {
-		s.logger.Error("Failed to get cover", slog.Int("id", id), slog.String("error", err.Error()))
+		s.logger.Error("Failed to get cover", slog.String("id", id), slog.String("error", err.Error()))
 		return cover, err
 	}
-	s.logger.Info("Successfully retrieved cover", slog.Int("id", id))
+	s.logger.Info("Successfully retrieved cover", slog.String("id", id))
 	return cover, err
 }

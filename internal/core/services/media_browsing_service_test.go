@@ -248,31 +248,31 @@ func TestMediaBrowsingService_GetSong(t *testing.T) {
 func TestMediaBrowsingService_GetCover(t *testing.T) {
 	tests := []struct {
 		name          string
-		id            int
+		id            string
 		setupMock     func(*mocks.MockMediaBrowsingRepository)
 		expectedCover domain.Cover
 		expectedError error
 	}{
 		{
 			name: "successful retrieval",
-			id:   1,
+			id:   "1",
 			setupMock: func(m *mocks.MockMediaBrowsingRepository) {
-				m.EXPECT().GetCoverByID(mock.Anything, 1).Return(domain.Cover{
-					Id:   1,
+				m.EXPECT().GetCoverByID(mock.Anything, "1").Return(domain.Cover{
+					Id:   "1",
 					Path: "/covers/cover1.jpg",
 				}, nil)
 			},
 			expectedCover: domain.Cover{
-				Id:   1,
+				Id:   "1",
 				Path: "/covers/cover1.jpg",
 			},
 			expectedError: nil,
 		},
 		{
 			name: "not found error",
-			id:   999,
+			id:   "999",
 			setupMock: func(m *mocks.MockMediaBrowsingRepository) {
-				m.EXPECT().GetCoverByID(mock.Anything, 999).Return(domain.Cover{}, &ports.NotFoundError{Message: "cover not found"})
+				m.EXPECT().GetCoverByID(mock.Anything, "999").Return(domain.Cover{}, &ports.NotFoundError{Message: "cover not found"})
 			},
 			expectedCover: domain.Cover{},
 			expectedError: &ports.NotFoundError{Message: "cover not found"},
@@ -299,7 +299,7 @@ func TestMediaBrowsingService_GetCover(t *testing.T) {
 					t.Errorf("unexpected error: %v", err)
 				}
 				if result.Id != tt.expectedCover.Id {
-					t.Errorf("expected cover ID %d, got %d", tt.expectedCover.Id, result.Id)
+					t.Errorf("expected cover ID %s, got %s", tt.expectedCover.Id, result.Id)
 				}
 				if result.Path != tt.expectedCover.Path {
 					t.Errorf("expected cover path %s, got %s", tt.expectedCover.Path, result.Path)

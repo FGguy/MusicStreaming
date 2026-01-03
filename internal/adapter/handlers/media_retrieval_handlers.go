@@ -127,16 +127,16 @@ func (h *MediaRetrievalHandler) handleGetCoverArt(c *gin.Context) {
 		paramId = c.Query("id")
 	)
 
-	id, err := strconv.Atoi(paramId)
-	if paramId == "" || err != nil {
+	if paramId == "" {
 		h.logger.Warn("Get cover art handler - invalid id parameter", slog.String("id", paramId))
 		buildAndSendError(c, "10")
 		return
 	}
 
-	cover, err := h.MediaRetrievalService.GetCover(ctx, id)
+	h.logger.Info("Get cover art handler called", slog.String("id", paramId))
+	cover, err := h.MediaRetrievalService.GetCover(ctx, paramId)
 	if err != nil {
-		h.logger.Warn("Get cover art handler error", slog.Int("id", id), slog.String("error", err.Error()))
+		h.logger.Warn("Get cover art handler error", slog.String("id", paramId), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotFoundError:
 			buildAndSendError(c, "70")
@@ -146,6 +146,6 @@ func (h *MediaRetrievalHandler) handleGetCoverArt(c *gin.Context) {
 		return
 	}
 
-	h.logger.Info("Get cover art handler success", slog.Int("id", id))
+	h.logger.Info("Get cover art handler success", slog.String("id", paramId))
 	c.File(cover.Path)
 }
