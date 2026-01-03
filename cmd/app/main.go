@@ -6,8 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
-	"music-streaming/internal/adapter/repositories"
 	handlers "music-streaming/internal/adapter/handlers"
+	"music-streaming/internal/adapter/repositories"
 	"music-streaming/internal/core/config"
 	"music-streaming/internal/core/services"
 	"net/http"
@@ -19,7 +19,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -55,79 +54,51 @@ func main() {
 
 	//Load .env
 	if err := godotenv.Load(); err != nil {
-		log.Fatal().Msg("Error loading .env file")
+		jsonLogger.Error("Error loading .env file", slog.String("error", err.Error()))
 	}
 
 	// Load config file
 	// Should be injected into application components that need it
 	config, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal().Msgf("Failed loading server configuration file. Error: %s", err)
+		jsonLogger.Error("Failed loading server configuration file", slog.String("error", err.Error()))
 	}
 
-	// Setup Database Connection
-	dbHost := os.Getenv("DB_HOST")
-	if dbHost == "" {
-		dbHost = "localhost"
+	dbURL, ok := os.LookupEnv("POSTGRES_CONNECTION_STRING")
+	if !ok {
+		jsonLogger.Error("POSTGRES_CONNECTION_STRING environment variable is not set")
 	}
-	dbPort := os.Getenv("DB_PORT")
-	if dbPort == "" {
-		dbPort = "5432"
-	}
-	dbUser := os.Getenv("POSTGRES_USER")
-	if dbUser == "" {
-		dbUser = "myuser"
-	}
-	dbPassword := os.Getenv("POSTGRES_PASSWORD")
-	if dbPassword == "" {
-		dbPassword = "mypassword"
-	}
-	dbName := os.Getenv("POSTGRES_DB")
-	if dbName == "" {
-		dbName = "music_streaming"
-	}
-
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		dbUser, dbPassword, dbHost, dbPort, dbName)
 
 	db, err := pgx.Connect(context.Background(), dbURL)
 	if err != nil {
-		log.Fatal().Msgf("Failed to connect to database: %s", err)
+		jsonLogger.Error("Failed to connect to database", slog.String("error", err.Error()))
 	}
 	defer db.Close(context.Background())
 
 	// Test database connection
 	if err := db.Ping(context.Background()); err != nil {
-		log.Fatal().Msgf("Failed to ping database: %s", err)
+		jsonLogger.Error("Failed to ping database", slog.String("error", err.Error()))
 	}
-	log.Info().Msg("Successfully connected to database")
+	jsonLogger.Info("Successfully connected to database")
 
 	// Setup Redis Connection
-	redisHost := os.Getenv("REDIS_HOST")
-	if redisHost == "" {
-		redisHost = "localhost"
-	}
-	redisPort := os.Getenv("REDIS_PORT")
-	if redisPort == "" {
-		redisPort = "6379"
-	}
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-	if redisPassword == "" {
-		redisPassword = ""
+	redisURL, ok := os.LookupEnv("REDIS_CONNECTION_STRING")
+	if !ok {
+		jsonLogger.Error("REDIS_CONNECTION_STRING environment variable is not set")
 	}
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: redisPassword,
+		Addr:     redisURL,
+		Password: "",
 		DB:       0,
 	})
 
 	// Test Redis connection
 	ctx := context.Background()
 	if err := redisClient.Ping(ctx).Err(); err != nil {
-		log.Fatal().Msgf("Failed to connect to Redis: %s", err)
+		jsonLogger.Error("Failed to connect to Redis", slog.String("error", err.Error()))
 	}
-	log.Info().Msg("Successfully connected to Redis")
+	jsonLogger.Info("Successfully connected to Redis")
 	defer redisClient.Close()
 
 	// Setup Dependencies
@@ -175,7 +146,7 @@ func main() {
 		ErrorLog:       logger,
 	}
 
-	log.Info().Msgf("Starting server at address :%d", PORT)
+	jsonLogger.Info("Starting server at address :%d", slog.Int("port", PORT))
 	serverError := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
