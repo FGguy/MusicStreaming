@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"encoding/xml"
-	"music-streaming/internal/core/domain"
 	"net/http"
 	"strconv"
 	"strings"
@@ -74,17 +73,17 @@ var (
 )
 
 type SubsonicResponse struct {
-	XMLName    xml.Name           `xml:"subsonic-response" json:"-"`
-	Xmlns      string             `xml:"xmlns,attr" json:"-"`
-	Status     string             `xml:"status,attr" json:"status"`
-	Version    string             `xml:"version,attr" json:"version"`
-	Error      *SubsonicError     `xml:"error,omitempty" json:"error,omitempty"`
-	User       *domain.User       `xml:"user,omitempty" json:"user,omitempty"`
-	ScanStatus *domain.ScanStatus `xml:"scanStatus,omitempty" json:"scanStatus,omitempty"`
-	Users      *[]domain.User     `xml:"users,omitempty" json:"users,omitempty"`
-	Artist     *domain.Artist     `xml:"artist,omitempty" json:"artist,omitempty"`
-	Album      *domain.Album      `xml:"album,omitempty" json:"album,omitempty"`
-	Song       *domain.Song       `xml:"song,omitempty" json:"song,omitempty"`
+	XMLName    xml.Name        `xml:"subsonic-response" json:"-"`
+	Xmlns      string          `xml:"xmlns,attr" json:"-"`
+	Status     string          `xml:"status,attr" json:"status"`
+	Version    string          `xml:"version,attr" json:"version"`
+	Error      *SubsonicError  `xml:"error,omitempty" json:"error,omitempty"`
+	User       *UserDTO        `xml:"user,omitempty" json:"user,omitempty"`
+	ScanStatus *ScanStatusDTO  `xml:"scanStatus,omitempty" json:"scanStatus,omitempty"`
+	Users      *[]UserDTO      `xml:"users,omitempty" json:"users,omitempty"`
+	Artist     *ArtistDTO      `xml:"artist,omitempty" json:"artist,omitempty"`
+	Album      *AlbumDTO       `xml:"album,omitempty" json:"album,omitempty"`
+	Song       *SongDTO        `xml:"song,omitempty" json:"song,omitempty"`
 }
 
 type SubsonicError struct {

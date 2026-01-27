@@ -36,11 +36,15 @@ func (h *MediaScanningHandler) handleGetScanStatus(c *gin.Context) {
 	}
 
 	h.logger.Info("Get scan status handler success", slog.Bool("scanning", scanStatus.Scanning), slog.Int("count", scanStatus.Count))
+
+	// Convert to DTO
+	scanStatusDTO := ScanStatusToDTO(scanStatus)
+
 	subsonicRes := SubsonicResponse{
 		Xmlns:      Xmlns,
 		Status:     "ok",
 		Version:    SubsonicVersion,
-		ScanStatus: &scanStatus,
+		ScanStatus: &scanStatusDTO,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)
@@ -66,11 +70,15 @@ func (h *MediaScanningHandler) handleStartScan(c *gin.Context) {
 	}
 
 	h.logger.Info("Start scan handler success", slog.String("username", rUser.Username), slog.Bool("scanning", scanStatus.Scanning))
+
+	// Convert to DTO
+	scanStatusDTO := ScanStatusToDTO(scanStatus)
+
 	subsonicRes := SubsonicResponse{
 		Xmlns:      Xmlns,
 		Status:     "ok",
 		Version:    SubsonicVersion,
-		ScanStatus: &scanStatus,
+		ScanStatus: &scanStatusDTO,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)

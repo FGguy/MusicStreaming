@@ -52,14 +52,17 @@ func (h *UserManagementHandler) hangleGetUser(c *gin.Context) {
 		return
 	}
 
-	user.Password = "" //do not send user passwords
 	h.logger.Info("Get user handler success", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
+
+	// Convert to DTO and clear password
+	userDTO := UserToDTO(user)
+	userDTO.Password = "" // do not send user passwords
 
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
 		Version: SubsonicVersion,
-		User:    &user,
+		User:    &userDTO,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)
@@ -82,16 +85,19 @@ func (h *UserManagementHandler) hangleGetUsers(c *gin.Context) {
 		return
 	}
 
-	for i := range users {
-		users[i].Password = "" //do not send user passwords
-	}
 	h.logger.Info("Get users handler success", slog.String("requesting_user", rUser.Username), slog.Int("count", len(users)))
+
+	// Convert to DTOs and clear passwords
+	userDTOs := UsersToDTO(users)
+	for i := range userDTOs {
+		userDTOs[i].Password = "" // do not send user passwords
+	}
 
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
 		Version: SubsonicVersion,
-		Users:   &users,
+		Users:   &userDTOs,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)
@@ -103,15 +109,18 @@ func (h *UserManagementHandler) handleCreateUser(c *gin.Context) {
 		ctx   = context.WithValue(c.Request.Context(), ports.KeyRequestingUserID, rUser)
 	)
 
-	user := &domain.User{}
-	if err := c.Bind(user); err != nil {
+	userDTO := &UserDTO{}
+	if err := c.Bind(userDTO); err != nil {
 		h.logger.Warn("Create user handler - bind error", slog.String("requesting_user", rUser.Username), slog.String("error", err.Error()))
 		buildAndSendError(c, "0")
 		return
 	}
 
+	// Convert DTO to domain entity
+	user := DTOToUser(*userDTO)
+
 	h.logger.Info("Create user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", user.Username))
-	if err := h.userServ.CreateUser(ctx, *user); err != nil {
+	if err := h.userServ.CreateUser(ctx, user); err != nil {
 		h.logger.Warn("Create user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", user.Username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:
@@ -141,16 +150,18 @@ func (h *UserManagementHandler) handleUpdateUser(c *gin.Context) {
 		ctx      = context.WithValue(c.Request.Context(), ports.KeyRequestingUserID, rUser)
 	)
 
-	user := &domain.User{}
-	if err := c.Bind(user); err != nil {
+	userDTO := &UserDTO{}
+	if err := c.Bind(userDTO); err != nil {
 		h.logger.Warn("Update user handler - bind error", slog.String("requesting_user", rUser.Username), slog.String("error", err.Error()))
 		buildAndSendError(c, "0")
 		return
 	}
 
+	// Convert DTO to domain entity
+	user := DTOToUser(*userDTO)
+
 	h.logger.Info("Update user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
-	//if no valid updates abort
-	if err := h.userServ.UpdateUser(ctx, username, *user); err != nil {
+	if err := h.userServ.UpdateUser(ctx, username, user); err != nil {
 		h.logger.Warn("Update user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
 		switch err.(type) {
 		case *ports.NotAuthorizedError:

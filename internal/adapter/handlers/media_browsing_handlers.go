@@ -53,11 +53,15 @@ func (h *MediaBrowsingHandler) handleGetArtist(c *gin.Context) {
 	}
 
 	h.logger.Info("Get artist handler success", slog.Int("id", id), slog.String("name", artist.Name))
+
+	// Convert to DTO
+	artistDTO := ArtistToDTO(artist)
+
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
 		Version: SubsonicVersion,
-		Artist:  &artist,
+		Artist:  &artistDTO,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)
@@ -90,11 +94,15 @@ func (h *MediaBrowsingHandler) handleGetAlbum(c *gin.Context) {
 	}
 
 	h.logger.Info("Get album handler success", slog.Int("id", id), slog.String("name", album.Name))
+
+	// Convert to DTO
+	albumDTO := AlbumToDTO(album)
+
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
 		Version: SubsonicVersion,
-		Album:   &album,
+		Album:   &albumDTO,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)
@@ -127,11 +135,15 @@ func (h *MediaBrowsingHandler) handleGetSong(c *gin.Context) {
 	}
 
 	h.logger.Info("Get song handler success", slog.Int("id", id), slog.String("title", song.Title))
+
+	// Convert to DTO
+	songDTO := SongToDTO(song)
+
 	subsonicRes := SubsonicResponse{
 		Xmlns:   Xmlns,
 		Status:  "ok",
 		Version: SubsonicVersion,
-		Song:    &song,
+		Song:    &songDTO,
 	}
 
 	SerializeAndSendBody(c, subsonicRes)

@@ -1,13 +1,13 @@
 package domain
 
-import "encoding/xml"
-
+// ScanStatus represents the current status of a media library scan
 type ScanStatus struct {
-	XMLName  xml.Name `xml:"scanStatus" json:"-"`
-	Scanning bool     `xml:"scanning,attr" json:"scanning"`
-	Count    int      `xml:"count,attr" json:"count"`
+	Scanning bool
+	Count    int
 }
 
+// FFProbeFormat represents the format information from ffprobe
+// JSON tags are kept here as they are used for parsing external tool output
 type FFProbeFormat struct {
 	Filename       string `json:"filename"`
 	NbStreams      int    `json:"nb_streams"`
@@ -22,6 +22,8 @@ type FFProbeFormat struct {
 	ProbeScore     int    `json:"probe_score"`
 }
 
+// FFProbeInfo represents the full information from ffprobe
+// JSON tags are kept here as they are used for parsing external tool output
 type FFProbeInfo struct {
 	Format *FFProbeFormat `json:"format"`
 }
