@@ -1,6 +1,9 @@
 # MusicStreaming
 
-[![MusicStreaming CI](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml/badge.svg)](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml)
+[![Build](https://img.shields.io/github/actions/workflow/status/FGguy/MusicStreaming/CI.yaml?label=build&logo=go)](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/FGguy/MusicStreaming/CI.yaml?label=tests&logo=go)](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml)
+[![Lint](https://img.shields.io/github/actions/workflow/status/FGguy/MusicStreaming/CI.yaml?label=lint&logo=go)](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml)
+[![Security](https://img.shields.io/github/actions/workflow/status/FGguy/MusicStreaming/CI.yaml?label=security&logo=go)](https://github.com/FGguy/MusicStreaming/actions/workflows/CI.yaml)
 
 A self-hosted music streaming server implementing the Subsonic API, built with Go.
 
