@@ -3,6 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
+	"music-streaming/internal/core/ports"
 	"net/http"
 	"strconv"
 	"strings"
@@ -160,6 +162,32 @@ func buildAndSendError(c *gin.Context, errorCode string) {
 	}
 
 	SerializeAndSendBody(c, subsonicRes)
+}
+
+// handleServiceError converts domain errors to Subsonic error codes using errors.As
+func handleServiceError(c *gin.Context, err error) {
+	var (
+		notFoundErr     *ports.NotFoundError
+		notAuthorizedErr *ports.NotAuthorizedError
+		invalidParamErr *ports.MissingOrInvalidParameterError
+		failedAuthErr   *ports.FailedAuthenticationError
+		failedOpErr     *ports.FailedOperationError
+	)
+
+	switch {
+	case errors.As(err, &notFoundErr):
+		buildAndSendError(c, "70")
+	case errors.As(err, &notAuthorizedErr):
+		buildAndSendError(c, "50")
+	case errors.As(err, &invalidParamErr):
+		buildAndSendError(c, "10")
+	case errors.As(err, &failedAuthErr):
+		buildAndSendError(c, "40")
+	case errors.As(err, &failedOpErr):
+		buildAndSendError(c, "0")
+	default:
+		buildAndSendError(c, "0")
+	}
 }
 
 func SerializeAndSendBody(c *gin.Context, body any) {

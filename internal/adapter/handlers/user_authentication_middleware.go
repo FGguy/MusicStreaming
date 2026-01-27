@@ -34,10 +34,7 @@ func (m *UserManagementMiddleware) WithAuth(c *gin.Context) {
 	user, err := m.userAuthService.AuthenticateUser(ctx, qUser, qHashedPassword, qSalt)
 	if err != nil {
 		m.logger.Warn("Authentication failed", slog.String("username", qUser), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.FailedAuthenticationError:
-			buildAndSendError(c, "40")
-		}
+		handleServiceError(c, err)
 		return
 	}
 

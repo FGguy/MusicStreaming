@@ -43,12 +43,7 @@ func (h *MediaBrowsingHandler) handleGetArtist(c *gin.Context) {
 	artist, err := h.MediaBrowsingService.GetArtist(ctx, id)
 	if err != nil {
 		h.logger.Warn("Get artist handler error", slog.Int("id", id), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		case *ports.FailedOperationError:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -84,12 +79,7 @@ func (h *MediaBrowsingHandler) handleGetAlbum(c *gin.Context) {
 	album, err := h.MediaBrowsingService.GetAlbum(ctx, id)
 	if err != nil {
 		h.logger.Warn("Get album handler error", slog.Int("id", id), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		case *ports.FailedOperationError:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -125,12 +115,7 @@ func (h *MediaBrowsingHandler) handleGetSong(c *gin.Context) {
 	song, err := h.MediaBrowsingService.GetSong(ctx, id)
 	if err != nil {
 		h.logger.Warn("Get song handler error", slog.Int("id", id), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		case *ports.FailedOperationError:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 

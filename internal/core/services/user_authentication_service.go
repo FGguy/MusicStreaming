@@ -9,11 +9,18 @@ import (
 	"music-streaming/internal/core/ports"
 )
 
+// UserAuthenticationService implements the UserAuthenticationPort interface.
+// It provides user authentication functionality using MD5 password hashing with salt.
+//
+// SECURITY WARNING: MD5 is cryptographically broken and should not be used for password hashing.
+// This implementation follows the Subsonic API specification which requires MD5.
+// Consider implementing a more secure authentication option alongside this.
 type UserAuthenticationService struct {
 	userRepo ports.UserManagementRepository
 	logger   *slog.Logger
 }
 
+// NewUserAuthenticationService creates a new instance of UserAuthenticationService.
 func NewUserAuthenticationService(userRepo ports.UserManagementRepository, logger *slog.Logger) *UserAuthenticationService {
 	return &UserAuthenticationService{
 		userRepo: userRepo,
@@ -21,6 +28,9 @@ func NewUserAuthenticationService(userRepo ports.UserManagementRepository, logge
 	}
 }
 
+// AuthenticateUser validates user credentials and returns the authenticated user.
+// It checks if the user exists and verifies the password using MD5 hash with salt.
+// Returns FailedAuthenticationError if authentication fails.
 func (s *UserAuthenticationService) AuthenticateUser(ctx context.Context, username, password, salt string) (domain.User, error) {
 	s.logger.Info("Authentication attempt", slog.String("username", username))
 	user, err := s.userRepo.GetUser(ctx, username)

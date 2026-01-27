@@ -7,11 +7,14 @@ import (
 	"music-streaming/internal/core/ports"
 )
 
+// UserManagementService implements the UserManagementPort interface.
+// It provides CRUD operations for user management with role-based authorization.
 type UserManagementService struct {
 	repo   ports.UserManagementRepository
 	logger *slog.Logger
 }
 
+// NewUserManagementService creates a new instance of UserManagementService.
 func NewUserManagementService(repo ports.UserManagementRepository, logger *slog.Logger) *UserManagementService {
 	return &UserManagementService{
 		repo:   repo,
@@ -40,6 +43,12 @@ func (s *UserManagementService) CreateUser(ctx context.Context, user domain.User
 		return &ports.MissingOrInvalidParameterError{ParameterName: "username, email or password"}
 	}
 
+	// Domain validation
+	if err := user.Validate(); err != nil {
+		s.logger.Warn("Invalid user data", slog.String("requesting_user", username), slog.String("error", err.Error()))
+		return &ports.MissingOrInvalidParameterError{ParameterName: err.Error()}
+	}
+
 	err := s.repo.CreateUser(ctx, user)
 	if err != nil {
 		s.logger.Error("Failed to create user", slog.String("requesting_user", username), slog.String("target_username", user.Username), slog.String("error", err.Error()))
@@ -65,6 +74,12 @@ func (s *UserManagementService) UpdateUser(ctx context.Context, username string,
 	if user.Username == "" || user.Email == "" || user.Password == "" || username == "" {
 		s.logger.Warn("Invalid parameters for update user", slog.String("requesting_user", requestingUsername), slog.String("target_username", username))
 		return &ports.MissingOrInvalidParameterError{ParameterName: "username, email or password"}
+	}
+
+	// Domain validation
+	if err := user.Validate(); err != nil {
+		s.logger.Warn("Invalid user data", slog.String("requesting_user", requestingUsername), slog.String("error", err.Error()))
+		return &ports.MissingOrInvalidParameterError{ParameterName: err.Error()}
 	}
 
 	err := s.repo.UpdateUser(ctx, username, user)

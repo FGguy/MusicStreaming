@@ -41,14 +41,7 @@ func (h *UserManagementHandler) hangleGetUser(c *gin.Context) {
 	user, err := h.userServ.GetUser(ctx, username)
 	if err != nil {
 		h.logger.Warn("Get user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		case *ports.MissingOrInvalidParameterError:
-			buildAndSendError(c, "10")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -78,10 +71,7 @@ func (h *UserManagementHandler) hangleGetUsers(c *gin.Context) {
 	users, err := h.userServ.GetUsers(ctx)
 	if err != nil {
 		h.logger.Warn("Get users handler error", slog.String("requesting_user", rUser.Username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -122,14 +112,7 @@ func (h *UserManagementHandler) handleCreateUser(c *gin.Context) {
 	h.logger.Info("Create user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", user.Username))
 	if err := h.userServ.CreateUser(ctx, user); err != nil {
 		h.logger.Warn("Create user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", user.Username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		case *ports.MissingOrInvalidParameterError:
-			buildAndSendError(c, "10")
-		default:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -163,16 +146,7 @@ func (h *UserManagementHandler) handleUpdateUser(c *gin.Context) {
 	h.logger.Info("Update user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	if err := h.userServ.UpdateUser(ctx, username, user); err != nil {
 		h.logger.Warn("Update user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		case *ports.MissingOrInvalidParameterError:
-			buildAndSendError(c, "10")
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		default:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -196,16 +170,7 @@ func (h *UserManagementHandler) handleDeleteUser(c *gin.Context) {
 	h.logger.Info("Delete user handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	if err := h.userServ.DeleteUser(ctx, username); err != nil {
 		h.logger.Warn("Delete user handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		case *ports.MissingOrInvalidParameterError:
-			buildAndSendError(c, "10")
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		default:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -230,16 +195,7 @@ func (h *UserManagementHandler) handleChangePassword(c *gin.Context) {
 	h.logger.Info("Change password handler called", slog.String("requesting_user", rUser.Username), slog.String("target_username", username))
 	if err := h.userServ.ChangePassword(ctx, username, password); err != nil {
 		h.logger.Warn("Change password handler error", slog.String("requesting_user", rUser.Username), slog.String("target_username", username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		case *ports.MissingOrInvalidParameterError:
-			buildAndSendError(c, "10")
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		default:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 

@@ -46,14 +46,7 @@ func (h *MediaRetrievalHandler) handleDownload(c *gin.Context) {
 	song, err := h.MediaRetrievalService.DownloadSong(ctx, id)
 	if err != nil {
 		h.logger.Warn("Download handler error", slog.Int("id", id), slog.String("username", rUser.Username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		case *ports.FailedOperationError:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -92,14 +85,7 @@ func (h *MediaRetrievalHandler) handleStream(c *gin.Context) {
 	song, err := h.MediaRetrievalService.StreamSong(ctx, id)
 	if err != nil {
 		h.logger.Warn("Stream handler error", slog.Int("id", id), slog.String("username", rUser.Username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		case *ports.FailedOperationError:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 
@@ -137,12 +123,7 @@ func (h *MediaRetrievalHandler) handleGetCoverArt(c *gin.Context) {
 	cover, err := h.MediaRetrievalService.GetCover(ctx, paramId)
 	if err != nil {
 		h.logger.Warn("Get cover art handler error", slog.String("id", paramId), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotFoundError:
-			buildAndSendError(c, "70")
-		case *ports.FailedOperationError:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 

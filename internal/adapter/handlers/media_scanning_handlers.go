@@ -60,12 +60,7 @@ func (h *MediaScanningHandler) handleStartScan(c *gin.Context) {
 	scanStatus, err := h.mediaScanningService.StartScan(ctx)
 	if err != nil {
 		h.logger.Warn("Start scan handler error", slog.String("username", rUser.Username), slog.String("error", err.Error()))
-		switch err.(type) {
-		case *ports.NotAuthorizedError:
-			buildAndSendError(c, "50")
-		default:
-			buildAndSendError(c, "0")
-		}
+		handleServiceError(c, err)
 		return
 	}
 

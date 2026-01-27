@@ -8,9 +8,9 @@ import (
 // UserDTO represents the HTTP layer representation of a User
 type UserDTO struct {
 	XMLName             xml.Name `xml:"user" json:"-"`
-	Username            string   `xml:"username,attr" json:"username" form:"username" binding:"required"`
-	Email               string   `xml:"email,attr" json:"email" form:"email" binding:"required"`
-	Password            string   `xml:"-" json:"password,omitempty" form:"password" binding:"required"`
+	Username            string   `xml:"username,attr" json:"username" form:"username" binding:"required,min=3,max=50"`
+	Email               string   `xml:"email,attr" json:"email" form:"email" binding:"required,email"`
+	Password            string   `xml:"-" json:"password,omitempty" form:"password" binding:"required,min=6"`
 	ScrobblingEnabled   bool     `xml:"scrobblingEnabled,attr" json:"scrobblingEnabled" form:"scrobblingEnabled"`
 	LdapAuthenticated   bool     `xml:"ldapAuthenticated,attr" json:"ldapAuthenticated" form:"ldapAuthenticated"`
 	AdminRole           bool     `xml:"adminRole,attr" json:"adminRole" form:"adminRole"`
@@ -26,7 +26,7 @@ type UserDTO struct {
 	ShareRole           bool     `xml:"shareRole,attr" json:"shareRole" form:"shareRole"`
 	VideoConversionRole bool     `xml:"videoConversionRole,attr" json:"videoConversionRole" form:"videoConversionRole"`
 	MusicfolderId       []string `xml:"folder,omitempty" json:"folder,omitempty" form:"folder"`
-	MaxBitRate          int32    `xml:"maxBitRate,attr" json:"maxBitRate" form:"maxBitRate"`
+	MaxBitRate          int32    `xml:"maxBitRate,attr" json:"maxBitRate" form:"maxBitRate" binding:"gte=0"`
 }
 
 // ArtistDTO represents the HTTP layer representation of an Artist

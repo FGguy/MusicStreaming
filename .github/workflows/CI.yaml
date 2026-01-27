@@ -26,6 +26,33 @@ jobs:
       - name: Build
         run: make build
 
+  test:
+    name: Test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23.0"
+
+      - name: Install dependencies
+        run: make get-dependencies
+
+      - name: Run unit tests
+        run: go test -v -race -coverprofile=coverage.out ./internal/core/services/...
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
   lint:
     name: Lint
     runs-on: ubuntu-22.04
@@ -44,3 +71,27 @@ jobs:
 
       - name: Golangci-lint
         uses: golangci/golangci-lint-action@v9.2.0
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23.0"
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: '-fmt sarif -out gosec-results.sarif ./...'
+
+      - name: Upload Gosec results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: gosec-results.sarif

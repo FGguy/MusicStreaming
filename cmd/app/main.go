@@ -103,38 +103,38 @@ func main() {
 
 	// Setup Dependencies
 	// Repositories
-	UserManagementRepository := repositories.NewSQLUserManagementRepository(db, redisClient)
-	MediaBrowsingRepository := repositories.NewSQLMediaBrowsingRepository(db)
+	userManagementRepository := repositories.NewSQLUserManagementRepository(db, redisClient)
+	mediaBrowsingRepository := repositories.NewSQLMediaBrowsingRepository(db)
 
 	// Services
-	UserAuthenticationService := services.NewUserAuthenticationService(UserManagementRepository, jsonLogger)
-	UserManagementService := services.NewUserManagementService(UserManagementRepository, jsonLogger)
-	MediaBrowsingService := services.NewMediaBrowsingService(MediaBrowsingRepository, jsonLogger)
-	MediaRetrievalService := services.NewMediaRetrievalService(MediaBrowsingRepository, jsonLogger)
-	MediaScanningService := services.NewMediaScanningService(MediaBrowsingRepository, config, jsonLogger)
+	userAuthenticationService := services.NewUserAuthenticationService(userManagementRepository, jsonLogger)
+	userManagementService := services.NewUserManagementService(userManagementRepository, jsonLogger)
+	mediaBrowsingService := services.NewMediaBrowsingService(mediaBrowsingRepository, jsonLogger)
+	mediaRetrievalService := services.NewMediaRetrievalService(mediaBrowsingRepository, jsonLogger)
+	mediaScanningService := services.NewMediaScanningService(mediaBrowsingRepository, config, jsonLogger)
 
 	// Middleware
-	UserAuthenticationMiddleware := handlers.NewUserManagementMiddleware(UserAuthenticationService, jsonLogger)
+	userAuthenticationMiddleware := handlers.NewUserManagementMiddleware(userAuthenticationService, jsonLogger)
 
 	// Handlers
-	UserManagementHandler := handlers.NewUserManagementHandler(UserManagementService, jsonLogger)
-	MediaBrowsingHandler := handlers.NewMediaBrowsingHandler(MediaBrowsingService, jsonLogger)
-	MediaRetrievalHandler := handlers.NewMediaRetrievalHandler(MediaRetrievalService, jsonLogger)
-	MediaScanningHandler := handlers.NewMediaScanningHandler(MediaScanningService, jsonLogger)
-	SystemHandler := handlers.NewSystemHandler(jsonLogger)
+	userManagementHandler := handlers.NewUserManagementHandler(userManagementService, jsonLogger)
+	mediaBrowsingHandler := handlers.NewMediaBrowsingHandler(mediaBrowsingService, jsonLogger)
+	mediaRetrievalHandler := handlers.NewMediaRetrievalHandler(mediaRetrievalService, jsonLogger)
+	mediaScanningHandler := handlers.NewMediaScanningHandler(mediaScanningService, jsonLogger)
+	systemHandler := handlers.NewSystemHandler(jsonLogger)
 
 	app := handlers.
 		NewApplication().
 		WithMiddleware(
 			handlers.ValidateSubsonicQueryParameters,
-			UserAuthenticationMiddleware.WithAuth,
+			userAuthenticationMiddleware.WithAuth,
 		).
 		WithHandlers(
-			UserManagementHandler,
-			MediaBrowsingHandler,
-			MediaRetrievalHandler,
-			MediaScanningHandler,
-			SystemHandler,
+			userManagementHandler,
+			mediaBrowsingHandler,
+			mediaRetrievalHandler,
+			mediaScanningHandler,
+			systemHandler,
 		).
 		RegisterHandlers()
 
